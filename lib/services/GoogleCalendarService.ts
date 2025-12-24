@@ -141,6 +141,15 @@ export class GoogleCalendarService {
     }
 
     // トークンの有効期限をチェック
+    if (!tokens.google_token_expiry) {
+      // 有効期限が設定されていない場合はリフレッシュ
+      return await this.refreshAccessToken(
+        supabase,
+        staffId,
+        tokens.google_refresh_token
+      );
+    }
+
     const expiryDate = new Date(tokens.google_token_expiry);
     const now = new Date();
 
