@@ -1,0 +1,447 @@
+'use client';
+
+import { useAuth } from '@/components/AuthProvider';
+import { LeaveDatesModal } from '@/components/LeaveDatesModal';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+
+interface StaffSummary {
+  staff_id: string;
+  staff_name: string;
+  staff_email: string;
+  work_days: number;
+  total_work_hours: number;
+  total_overtime: number;
+  paid_leave_count: number;
+  compensatory_leave_count: number;
+  holiday_work_count: number;
+  new_employee_leave_count: number;
+}
+
+interface ModalState {
+  staffId: string;
+  staffName: string;
+  leaveType: 'paid_leave' | 'compensatory_leave' | 'holiday_work' | 'new_employee_leave';
+  leaveLabel: string;
+}
+
+export default function AdminPage() {
+  const { user, loading: authLoading } = useAuth();
+  const [summaries, setSummaries] = useState<StaffSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [modalState, setModalState] = useState<ModalState | null>(null);
+
+  // 全社員サマリーを取得
+  const fetchSummaries = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const params = new URLSearchParams();
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+
+      const response = await fetch(`/api/attendance/all-staff-summary?${params}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setSummaries(data.data.summaries);
+      } else {
+        setError(data.error?.message || 'サマリーの取得に失敗しました');
+      }
+    } catch (err) {
+      setError('サマリーの取得に失敗しました');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      // 管理者チェック
+      const adminEmails = [
+        'tomoko.kunihiro@ifoo-oita.com',
+        'yurine.kimura@ifoo-oita.com',
+        'mariko.kume@ifoo-oita.com',
+      ];
+      if (!adminEmails.includes(user.email || '')) {
+        setError('アクセス権限がありません');
+        setLoading(false);
+        return;
+      }
+      fetchSummaries();
+    }
+  }, [user, startDate, endDate]);
+
+  const handleClearFilter = () => {
+    setStartDate('');
+    setEndDate('');
+  };
+
+  if (authLoading) {
+    return (
+      <main style={{ padding: '2rem' }}>
+        <p>読み込み中...</p>
+      </main>
+    );
+  }
+
+  return (
+    <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
+      <div style={{ marginBottom: '2rem' }}>
+        <h1 style={{ marginBottom: '1rem' }}>全社員勤怠サマリー</h1>
+        <Link
+          href="/"
+          style={{
+            color: '#007bff',
+            textDecoration: 'none',
+          }}
+        >
+          ← ホームに戻る
+        </Link>
+      </div>
+
+      {/* 期間フィルター */}
+      <div
+        style={{
+          padding: '1.5rem',
+          marginBottom: '1.5rem',
+          border: '1px solid #e0e0e0',
+          borderRadius: '8px',
+          backgroundColor: '#f9f9f9',
+        }}
+      >
+        <h3 style={{ marginBottom: '1rem', fontSize: '1rem' }}>期間で絞り込み</h3>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.9rem' }}>
+              開始日
+            </label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              style={{
+                padding: '0.5rem',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+              }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.9rem' }}>
+              終了日
+            </label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              style={{
+                padding: '0.5rem',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+              }}
+            />
+          </div>
+          <div style={{ marginTop: 'auto' }}>
+            <button
+              onClick={handleClearFilter}
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: '#6c757d',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+              }}
+            >
+              クリア
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {error && (
+        <div
+          style={{
+            padding: '1rem',
+            marginBottom: '1.5rem',
+            backgroundColor: '#f8d7da',
+            border: '1px solid #f5c6cb',
+            borderRadius: '4px',
+            color: '#721c24',
+          }}
+        >
+          {error}
+        </div>
+      )}
+
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '2rem' }}>
+          <p>読み込み中...</p>
+        </div>
+      ) : (
+        <>
+          {/* 期間指定時の注意書き */}
+          {(startDate || endDate) && (
+            <div
+              style={{
+                padding: '1rem',
+                marginBottom: '1.5rem',
+                backgroundColor: '#d1ecf1',
+                border: '1px solid #bee5eb',
+                borderRadius: '4px',
+                color: '#0c5460',
+              }}
+            >
+              <strong>表示中:</strong> {startDate || '最初'} ～ {endDate || '最新'} の期間データ
+              <br />
+              <small>※ 累計データを見るには、期間フィルターをクリアしてください</small>
+            </div>
+          )}
+
+          <div style={{ overflowX: 'auto' }}>
+            <table
+            style={{
+              width: '100%',
+              borderCollapse: 'collapse',
+              backgroundColor: '#fff',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            }}
+          >
+            <thead>
+              <tr style={{ backgroundColor: '#f8f9fa' }}>
+                <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>
+                  社員名
+                </th>
+                <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #dee2e6' }}>
+                  出勤日数
+                </th>
+                <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #dee2e6' }}>
+                  総労働時間
+                </th>
+                <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #dee2e6', backgroundColor: '#fff3cd' }}>
+                  総残業時間
+                </th>
+                <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #dee2e6' }}>
+                  有給休暇
+                </th>
+                <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #dee2e6' }}>
+                  代休
+                </th>
+                <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #dee2e6' }}>
+                  休日出勤
+                </th>
+                <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #dee2e6' }}>
+                  休暇（6ヶ月以内社員）
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {summaries.map((summary) => (
+                <tr key={summary.staff_id} style={{ borderBottom: '1px solid #dee2e6' }}>
+                  <td style={{ padding: '1rem' }}>
+                    <div style={{ fontWeight: 'bold' }}>{summary.staff_name}</div>
+                    <div style={{ fontSize: '0.85rem', color: '#666' }}>{summary.staff_email}</div>
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'center' }}>
+                    {summary.work_days}日
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'center' }}>
+                    {summary.total_work_hours}時間
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'center', fontWeight: 'bold', color: '#856404', backgroundColor: '#fff3cd' }}>
+                    {summary.total_overtime}時間
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'center' }}>
+                    <button
+                      onClick={() =>
+                        setModalState({
+                          staffId: summary.staff_id,
+                          staffName: summary.staff_name,
+                          leaveType: 'paid_leave',
+                          leaveLabel: '有給休暇',
+                        })
+                      }
+                      disabled={summary.paid_leave_count === 0}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: summary.paid_leave_count > 0 ? '#007bff' : '#999',
+                        cursor: summary.paid_leave_count > 0 ? 'pointer' : 'default',
+                        textDecoration: summary.paid_leave_count > 0 ? 'underline' : 'none',
+                        fontSize: '1rem',
+                      }}
+                    >
+                      {summary.paid_leave_count}日
+                    </button>
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'center' }}>
+                    <button
+                      onClick={() =>
+                        setModalState({
+                          staffId: summary.staff_id,
+                          staffName: summary.staff_name,
+                          leaveType: 'compensatory_leave',
+                          leaveLabel: '代休',
+                        })
+                      }
+                      disabled={summary.compensatory_leave_count === 0}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: summary.compensatory_leave_count > 0 ? '#007bff' : '#999',
+                        cursor: summary.compensatory_leave_count > 0 ? 'pointer' : 'default',
+                        textDecoration: summary.compensatory_leave_count > 0 ? 'underline' : 'none',
+                        fontSize: '1rem',
+                      }}
+                    >
+                      {summary.compensatory_leave_count}日
+                    </button>
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'center' }}>
+                    <button
+                      onClick={() =>
+                        setModalState({
+                          staffId: summary.staff_id,
+                          staffName: summary.staff_name,
+                          leaveType: 'holiday_work',
+                          leaveLabel: '休日出勤',
+                        })
+                      }
+                      disabled={summary.holiday_work_count === 0}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: summary.holiday_work_count > 0 ? '#007bff' : '#999',
+                        cursor: summary.holiday_work_count > 0 ? 'pointer' : 'default',
+                        textDecoration: summary.holiday_work_count > 0 ? 'underline' : 'none',
+                        fontSize: '1rem',
+                      }}
+                    >
+                      {summary.holiday_work_count}日
+                    </button>
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'center' }}>
+                    <button
+                      onClick={() =>
+                        setModalState({
+                          staffId: summary.staff_id,
+                          staffName: summary.staff_name,
+                          leaveType: 'new_employee_leave',
+                          leaveLabel: '休暇（6ヶ月以内社員）',
+                        })
+                      }
+                      disabled={summary.new_employee_leave_count === 0}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: summary.new_employee_leave_count > 0 ? '#007bff' : '#999',
+                        cursor: summary.new_employee_leave_count > 0 ? 'pointer' : 'default',
+                        textDecoration: summary.new_employee_leave_count > 0 ? 'underline' : 'none',
+                        fontSize: '1rem',
+                      }}
+                    >
+                      {summary.new_employee_leave_count}日
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          </div>
+
+          {/* サマリー統計 */}
+          <div
+            style={{
+              marginTop: '2rem',
+              padding: '1.5rem',
+              border: '1px solid #e0e0e0',
+              borderRadius: '8px',
+              backgroundColor: '#f8f9fa',
+            }}
+          >
+            <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>
+              {startDate || endDate ? '期間内の合計' : '全期間の累計'}
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+              <div style={{ textAlign: 'center', padding: '1rem', backgroundColor: '#fff', borderRadius: '4px' }}>
+                <div style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
+                  総出勤日数
+                </div>
+                <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#007bff' }}>
+                  {summaries.reduce((sum, s) => sum + s.work_days, 0)}日
+                </div>
+              </div>
+              <div style={{ textAlign: 'center', padding: '1rem', backgroundColor: '#fff', borderRadius: '4px' }}>
+                <div style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
+                  総労働時間
+                </div>
+                <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#28a745' }}>
+                  {summaries.reduce((sum, s) => sum + s.total_work_hours, 0).toFixed(1)}時間
+                </div>
+              </div>
+              <div style={{ textAlign: 'center', padding: '1rem', backgroundColor: '#fff3cd', borderRadius: '4px' }}>
+                <div style={{ fontSize: '0.9rem', color: '#856404', marginBottom: '0.5rem' }}>
+                  総残業時間
+                </div>
+                <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#856404' }}>
+                  {summaries.reduce((sum, s) => sum + s.total_overtime, 0).toFixed(1)}時間
+                </div>
+              </div>
+              <div style={{ textAlign: 'center', padding: '1rem', backgroundColor: '#fff', borderRadius: '4px' }}>
+                <div style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
+                  総有給休暇
+                </div>
+                <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#28a745' }}>
+                  {summaries.reduce((sum, s) => sum + s.paid_leave_count, 0)}日
+                </div>
+              </div>
+              <div style={{ textAlign: 'center', padding: '1rem', backgroundColor: '#fff', borderRadius: '4px' }}>
+                <div style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
+                  総代休
+                </div>
+                <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#6c757d' }}>
+                  {summaries.reduce((sum, s) => sum + s.compensatory_leave_count, 0)}日
+                </div>
+              </div>
+              <div style={{ textAlign: 'center', padding: '1rem', backgroundColor: '#fff', borderRadius: '4px' }}>
+                <div style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
+                  総休日出勤
+                </div>
+                <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#dc3545' }}>
+                  {summaries.reduce((sum, s) => sum + s.holiday_work_count, 0)}日
+                </div>
+              </div>
+              <div style={{ textAlign: 'center', padding: '1rem', backgroundColor: '#fff', borderRadius: '4px' }}>
+                <div style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
+                  総休暇（6ヶ月以内社員）
+                </div>
+                <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#fd7e14' }}>
+                  {summaries.reduce((sum, s) => sum + s.new_employee_leave_count, 0)}日
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* 日付一覧モーダル */}
+      {modalState && (
+        <LeaveDatesModal
+          staffId={modalState.staffId}
+          staffName={modalState.staffName}
+          leaveType={modalState.leaveType}
+          leaveLabel={modalState.leaveLabel}
+          startDate={startDate}
+          endDate={endDate}
+          onClose={() => setModalState(null)}
+        />
+      )}
+    </main>
+  );
+}
