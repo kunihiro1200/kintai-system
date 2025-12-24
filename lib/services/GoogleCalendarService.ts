@@ -107,13 +107,17 @@ export class GoogleCalendarService {
     supabase: SupabaseClient,
     staffId: string,
     refreshToken: string
-  ) {
+  ): Promise<string> {
     this.oauth2Client.setCredentials({
       refresh_token: refreshToken,
     });
 
     const { credentials } = await this.oauth2Client.refreshAccessToken();
     
+    if (!credentials.access_token) {
+      throw new Error('アクセストークンのリフレッシュに失敗しました');
+    }
+
     // 新しいトークンをデータベースに保存
     const expiryDate = credentials.expiry_date
       ? new Date(credentials.expiry_date)
