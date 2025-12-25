@@ -24,16 +24,23 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // RLSをバイパスしてシステム管理者情報を取得
-    const serviceRoleClient = createServiceRoleClient();
-    const staffService = new StaffService(serviceRoleClient);
+    // 現在のユーザーのスタッフ情報を取得
+    const { data: staff, error: staffError } = await supabase
+      .from('staffs')
+      .select('is_system_admin')
+      .eq('email', user.email)
+      .single();
 
-    // システム管理者のステータスを取得
-    const systemAdminStatus = await staffService.getSystemAdminStatus();
+    if (staffError || !staff) {
+      return NextResponse.json({
+        success: true,
+        isSystemAdmin: false,
+      });
+    }
 
     return NextResponse.json({
       success: true,
-      data: systemAdminStatus,
+      isSystemAdmin: staff.is_system_admin === true,
     });
   } catch (error) {
     console.error('システム管理者ステータス取得エラー:', error);
