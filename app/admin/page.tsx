@@ -113,13 +113,13 @@ export default function AdminPage() {
     let periodEnd: Date;
 
     if (currentDay >= 16) {
-      // 当月16日以降の場合: 当月16日〜翌月15日
-      periodStart = new Date(today.getFullYear(), today.getMonth(), 16);
-      periodEnd = new Date(today.getFullYear(), today.getMonth() + 1, 15);
-    } else {
-      // 当月15日以前の場合: 前月16日〜当月15日
+      // 当月16日以降の場合: 前月16日〜当月15日
       periodStart = new Date(today.getFullYear(), today.getMonth() - 1, 16);
       periodEnd = new Date(today.getFullYear(), today.getMonth(), 15);
+    } else {
+      // 当月15日以前の場合: 前々月16日〜前月15日
+      periodStart = new Date(today.getFullYear(), today.getMonth() - 2, 16);
+      periodEnd = new Date(today.getFullYear(), today.getMonth() - 1, 15);
     }
 
     setStartDate(periodStart.toISOString().split('T')[0]);
