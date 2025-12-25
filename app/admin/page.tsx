@@ -122,8 +122,16 @@ export default function AdminPage() {
       periodEnd = new Date(today.getFullYear(), today.getMonth() - 1, 15);
     }
 
-    setStartDate(periodStart.toISOString().split('T')[0]);
-    setEndDate(periodEnd.toISOString().split('T')[0]);
+    // ローカルタイムゾーンで日付文字列を生成（UTCへの変換を避ける）
+    const formatDate = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    setStartDate(formatDate(periodStart));
+    setEndDate(formatDate(periodEnd));
   };
 
   // メール送信履歴を取得
