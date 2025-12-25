@@ -242,7 +242,7 @@ export default function StaffPage() {
           <h3 style={{ marginBottom: '1rem', fontSize: '1rem' }}>
             システム管理者ステータス
           </h3>
-          {systemAdminStatus.hasSystemAdmin ? (
+          {systemAdminStatus.hasSystemAdmin && systemAdminStatus.systemAdmins && systemAdminStatus.systemAdmins.length > 0 ? (
             <div>
               <p style={{ marginBottom: '0.5rem', fontWeight: 'bold' }}>
                 システム管理者 ({systemAdminStatus.systemAdmins.length}人):
@@ -311,22 +311,22 @@ export default function StaffPage() {
             ⚠️ システム管理者が設定されていないため、同期できません
           </p>
         )}
-        {systemAdminStatus && systemAdminStatus.hasSystemAdmin && !systemAdminStatus.systemAdmins.some(admin => admin.isGoogleConnected) && (
+        {systemAdminStatus && systemAdminStatus.hasSystemAdmin && systemAdminStatus.systemAdmins && !systemAdminStatus.systemAdmins.some(admin => admin.isGoogleConnected) && (
           <p style={{ fontSize: '0.85rem', color: '#856404', marginBottom: '1rem' }}>
             ⚠️ いずれかのシステム管理者のGoogle連携が必要です
           </p>
         )}
         <button
           onClick={handleSync}
-          disabled={syncing || !systemAdminStatus?.hasSystemAdmin || !systemAdminStatus?.systemAdmins.some(admin => admin.isGoogleConnected)}
+          disabled={syncing || !systemAdminStatus?.hasSystemAdmin || !systemAdminStatus?.systemAdmins || !systemAdminStatus.systemAdmins.some(admin => admin.isGoogleConnected)}
           style={{
             padding: '0.75rem 1.5rem',
             backgroundColor: '#28a745',
             color: 'white',
             border: 'none',
             borderRadius: '4px',
-            cursor: (syncing || !systemAdminStatus?.hasSystemAdmin || !systemAdminStatus?.systemAdmins.some(admin => admin.isGoogleConnected)) ? 'not-allowed' : 'pointer',
-            opacity: (syncing || !systemAdminStatus?.hasSystemAdmin || !systemAdminStatus?.systemAdmins.some(admin => admin.isGoogleConnected)) ? 0.6 : 1,
+            cursor: (syncing || !systemAdminStatus?.hasSystemAdmin || !systemAdminStatus?.systemAdmins || !systemAdminStatus.systemAdmins.some(admin => admin.isGoogleConnected)) ? 'not-allowed' : 'pointer',
+            opacity: (syncing || !systemAdminStatus?.hasSystemAdmin || !systemAdminStatus?.systemAdmins || !systemAdminStatus.systemAdmins.some(admin => admin.isGoogleConnected)) ? 0.6 : 1,
             fontSize: '0.9rem',
           }}
         >
