@@ -55,25 +55,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Googleアクセストークンを取得
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.provider_token) {
+    // 送信元メールアドレスに対応するスタッフを取得
+    const { data: senderStaffData, error: senderStaffError } = await supabase
+      .from('staffs')
+      .select('id, google_access_token, google_refresh_token')
+      .eq('email', senderEmail)
+      .single();
+
+    console.log('送信元スタッフ検索:', {
+      senderEmail,
+      found: !!senderStaffData,
+      hasAccessToken: !!senderStaffData?.google_access_token,
+      hasRefreshToken: !!senderStaffData?.google_refresh_token,
+      error: senderStaffError,
+    });
+
+    if (senderStaffError || !senderStaffData) {
       return NextResponse.json(
-        { success: false, error: 'Google認証が必要です。再度ログインしてください。' },
-        { status: 401 }
+        { success: false, error: `送信元メールアドレス（${senderEmail}）のスタッフが見つかりません。` },
+        { status: 404 }
       );
     }
 
-    // スタッフのGoogleトークンを取得（データベースから）
-    const { data: staffData, error: staffError } = await supabase
-      .from('staffs')
-      .select('google_access_token, google_refresh_token')
-      .eq('id', currentStaff.id)
-      .single();
-
-    if (staffError || !staffData?.google_access_token) {
+    if (!senderStaffData.google_access_token || !senderStaffData.google_refresh_token) {
       return NextResponse.json(
-        { success: false, error: 'Google連携が必要です。Google連携を設定してください。' },
+        { 
+          success: false, 
+          error: `送信元メールアドレス（${senderEmail}）のGoogle連携が必要です。${senderEmail}でログインしてGoogle連携を設定してください。` 
+        },
         { status: 401 }
       );
     }
@@ -85,8 +94,8 @@ export async function POST(request: NextRequest) {
     );
 
     oauth2Client.setCredentials({
-      access_token: staffData.google_access_token,
-      refresh_token: staffData.google_refresh_token,
+      access_token: senderStaffData.google_access_token,
+      refresh_token: senderStaffData.google_refresh_token,
     });
 
     // Gmail APIクライアントを作成
