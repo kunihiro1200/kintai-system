@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/components/AuthProvider';
 import { LeaveDatesModal } from '@/components/LeaveDatesModal';
+import { EmailPreviewModal } from '@/components/EmailPreviewModal';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
@@ -37,6 +38,7 @@ export default function AdminPage() {
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailHistory, setEmailHistory] = useState<any[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [showEmailPreview, setShowEmailPreview] = useState(false);
 
   // 全社員サマリーを取得
   const fetchSummaries = async () => {
@@ -133,10 +135,6 @@ export default function AdminPage() {
       return;
     }
 
-    if (!confirm(`勤怠サマリー（${startDate}〜${endDate}）をoitaifoo@gmail.comに送信しますか？`)) {
-      return;
-    }
-
     setSendingEmail(true);
 
     try {
@@ -157,6 +155,7 @@ export default function AdminPage() {
 
       if (data.success) {
         alert('メールを送信しました');
+        setShowEmailPreview(false);
         fetchEmailHistory(); // 送信履歴を更新
       } else {
         alert(`メール送信に失敗しました: ${data.error}`);
@@ -166,6 +165,21 @@ export default function AdminPage() {
     } finally {
       setSendingEmail(false);
     }
+  };
+
+  // メールプレビューを表示
+  const handleShowEmailPreview = () => {
+    if (!startDate || !endDate) {
+      alert('開始日と終了日を設定してください');
+      return;
+    }
+
+    if (summaries.length === 0) {
+      alert('送信するデータがありません');
+      return;
+    }
+
+    setShowEmailPreview(true);
   };
 
   if (authLoading) {
@@ -288,7 +302,7 @@ export default function AdminPage() {
         </div>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <button
-            onClick={handleSendEmail}
+            onClick={handleShowEmailPreview}
             disabled={sendingEmail || !startDate || !endDate || summaries.length === 0}
             style={{
               padding: '0.75rem 1.5rem',
@@ -301,7 +315,7 @@ export default function AdminPage() {
               fontWeight: 'bold',
             }}
           >
-            {sendingEmail ? '送信中...' : 'メール送信'}
+            メール送信
           </button>
           <button
             onClick={() => setShowHistory(!showHistory)}
@@ -670,6 +684,18 @@ export default function AdminPage() {
           startDate={startDate}
           endDate={endDate}
           onClose={() => setModalState(null)}
+        />
+      )}
+
+      {/* メールプレビューモーダル */}
+      {showEmailPreview && (
+        <EmailPreviewModal
+          startDate={startDate}
+          endDate={endDate}
+          summaries={summaries}
+          recipientEmail="oitaifoo@gmail.com"
+          onClose={() => setShowEmailPreview(false)}
+          onSend={handleSendEmail}
         />
       )}
     </main>
