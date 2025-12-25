@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     
     // 認証チェック
-    const currentStaff = await getCurrentStaff(supabase);
+    const currentStaff = await getCurrentStaff();
     if (!currentStaff) {
       return NextResponse.json(
         { success: false, error: '認証が必要です' },
