@@ -70,6 +70,7 @@ export default function AdminPage() {
     if (user) {
       // 管理者チェック
       const adminEmails = [
+        'tenant@ifoo-oita.com',
         'tomoko.kunihiro@ifoo-oita.com',
         'yurine.kimura@ifoo-oita.com',
         'mariko.kume@ifoo-oita.com',
