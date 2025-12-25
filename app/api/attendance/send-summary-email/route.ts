@@ -154,6 +154,12 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('メール送信エラー:', error);
+    console.error('エラー詳細:', {
+      message: error.message,
+      code: error.code,
+      response: error.response?.data,
+      stack: error.stack,
+    });
     
     // エラーメッセージを詳細化
     let errorMessage = 'メール送信に失敗しました';
@@ -161,6 +167,8 @@ export async function POST(request: NextRequest) {
       errorMessage = 'Google認証の有効期限が切れています。再度ログインしてください。';
     } else if (error.message?.includes('insufficient')) {
       errorMessage = 'Gmail送信の権限がありません。Google連携を再設定してください。';
+    } else if (error.message) {
+      errorMessage = `メール送信に失敗しました: ${error.message}`;
     }
 
     return NextResponse.json(
