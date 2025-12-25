@@ -402,6 +402,48 @@ export default function Home() {
         </div>
       </div>
 
+      {/* 勤怠ルール */}
+      <div
+        style={{
+          padding: '1rem',
+          marginBottom: '1.5rem',
+          border: '1px solid #e0e0e0',
+          borderRadius: '8px',
+          backgroundColor: '#fff3cd',
+        }}
+      >
+        <h3 style={{ marginBottom: '0.75rem', fontSize: '1rem', color: '#856404' }}>勤怠ルール</h3>
+        <div style={{ fontSize: '0.85rem', color: '#856404', lineHeight: '1.6' }}>
+          <ol style={{ margin: 0, paddingLeft: '1.5rem' }}>
+            <li style={{ marginBottom: '0.5rem' }}>出退勤は基本的にパソコンで行うこと。やむを得ない場合はスマホで可能。</li>
+            <li style={{ marginBottom: '0.5rem' }}>仕事をする準備が整ってから出勤時間を押すこと</li>
+            <li style={{ marginBottom: '0.5rem' }}>祝日出勤者は祝日に休暇をとると、祝日手当はでません</li>
+            <li style={{ marginBottom: '0.5rem' }}>当社の法定休日は水曜日のため、月曜に振替休日はありません。水曜祝日だった場合に、木曜日が振替休日となります。（祝日出勤者は関係ない）</li>
+            <li style={{ marginBottom: '0.5rem' }}>月曜が祝日の場合、月曜祝日出勤者が行うこと。（９時半出社でよい）</li>
+            <li style={{ marginBottom: '0.5rem' }}>有給休暇、その他休暇を取る場合は、必ずこのサイトから休暇ボタンを押してください。自動でGカレンダーに表示されます。変更や削除もこのサイトで行うと、自動的にカレンダーも修正、削除されます。手入力は禁止です。</li>
+          </ol>
+          
+          <div style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: '#fff', borderRadius: '4px', border: '1px solid #ffc107' }}>
+            <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem' }}>スマホでの設定方法</h4>
+            <p style={{ margin: '0 0 0.5rem 0' }}><strong>Androidの場合:</strong></p>
+            <ol style={{ margin: '0 0 0.75rem 0', paddingLeft: '1.5rem' }}>
+              <li>Chromeで https://kintai-system-pi.vercel.app を開く</li>
+              <li>画面右上の「︙」（3点メニュー）をタップ</li>
+              <li>「ホーム画面に追加」を選択</li>
+              <li>アプリ名を入力（例：「勤怠管理」）</li>
+              <li>「追加」をタップ</li>
+            </ol>
+          </div>
+
+          <div style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: '#d1ecf1', borderRadius: '4px', border: '1px solid #bee5eb' }}>
+            <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#0c5460' }}>毎月17日までにフレックスへ連絡</h4>
+            <p style={{ margin: 0, color: '#0c5460' }}>
+              事務は、「全社員勤怠サマリー」から、残業時間のみを確認し大幅に超えている場合、その人に確認し、17日までにフレックスに連絡すること
+            </p>
+          </div>
+        </div>
+      </div>
+
       {showEditModal && record && (
         <EditTimeModal
           recordId={record.id}
