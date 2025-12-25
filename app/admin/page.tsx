@@ -68,6 +68,8 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (user) {
+      console.log('ログイン中のユーザー:', user.email);
+      
       // 管理者チェック
       const adminEmails = [
         'tenant@ifoo-oita.com',
@@ -75,6 +77,10 @@ export default function AdminPage() {
         'yurine.kimura@ifoo-oita.com',
         'mariko.kume@ifoo-oita.com',
       ];
+      
+      console.log('管理者リスト:', adminEmails);
+      console.log('アクセス許可:', adminEmails.includes(user.email || ''));
+      
       if (!adminEmails.includes(user.email || '')) {
         setError('アクセス権限がありません');
         setLoading(false);
