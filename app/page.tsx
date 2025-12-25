@@ -273,8 +273,8 @@ export default function Home() {
         />
       </div>
 
-      {/* Googleカレンダー連携（未連携の場合のみ表示） */}
-      {!calendarConnected && <GoogleCalendarConnect onConnectionChange={setCalendarConnected} />}
+      {/* Googleカレンダー連携 */}
+      <GoogleCalendarConnect onConnectionChange={setCalendarConnected} />
 
       {/* 休暇ボタン */}
       <div
