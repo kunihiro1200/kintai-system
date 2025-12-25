@@ -31,46 +31,99 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 管理者チェック
-    if (!ADMIN_EMAILS.includes(user.email || '')) {
-      console.log('権限エラー: 管理者ではありません', user.email);
+    // 管理者チェック - 現在のユーザーがシステム管理者かどうか確認
+    const { data: currentStaff, error: staffError } = await supabase
+      .from('staffs')
+      .select('*')
+      .eq('email', user.email)
+      .eq('is_system_admin', true)
+      .single();
+
+    if (staffError || !currentStaff) {
+      console.log('権限エラー: システム管理者ではありません', user.email);
       return NextResponse.json(
-        { success: false, error: { message: 'アクセス権限がありません' } },
+        { success: false, error: { message: 'アクセス権限がありません。システム管理者のみがスプレッドシート同期を実行できます。' } },
         { status: 403 }
       );
     }
 
+    console.log('現在のユーザー（システム管理者）:', { email: currentStaff.email, name: currentStaff.name });
+
     // StaffServiceのインスタンスを作成
     const staffService = new StaffService(supabase);
 
-    // システム管理者の存在確認
-    const systemAdmin = await staffService.getSystemAdmin();
-    
-    if (!systemAdmin) {
-      console.log('システム管理者エラー: システム管理者が設定されていません');
+    // 現在のユーザーのトークンを確認
+    if (!currentStaff.google_access_token || !currentStaff.google_refresh_token) {
+      console.log('Google連携エラー: トークンがありません');
       return NextResponse.json(
         {
           success: false,
           error: { 
-            message: 'システム管理者が設定されていません。スタッフ管理画面でシステム管理者を設定してください。',
-            code: 'NO_SYSTEM_ADMIN'
+            message: 'Googleカレンダーが連携されていません。ホーム画面でGoogleカレンダー連携を行ってください。',
+            code: 'NO_GOOGLE_CONNECTION'
           },
         },
         { status: 400 }
       );
     }
 
-    console.log('システム管理者:', { email: systemAdmin.email, name: systemAdmin.name });
+    console.log('Google連携確認:', {
+      hasAccessToken: !!currentStaff.google_access_token,
+      hasRefreshToken: !!currentStaff.google_refresh_token,
+      tokenExpiry: currentStaff.google_token_expiry
+    });
+
+    // 現在のユーザーのトークンでOAuth2Clientを作成
+    const { OAuth2Client } = require('google-auth-library');
+    const oauth2Client = new OAuth2Client(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET
+    );
+    
+    oauth2Client.setCredentials({
+      access_token: currentStaff.google_access_token,
+      refresh_token: currentStaff.google_refresh_token,
+    });
+
+    // GoogleSheetsServiceに現在のユーザーのOAuth2Clientを渡す
+    const { GoogleSheetsService } = require('@/lib/services/GoogleSheetsService');
+    const sheetsService = new GoogleSheetsService(supabase, oauth2Client);
 
     // スプレッドシートからスタッフ情報を同期
-    // StaffService.syncStaffFromSheetメソッドが内部でGoogleSheetsServiceを使用し、
-    // システム管理者のトークンを自動的に取得して使用する
     console.log('スタッフ同期開始:', { spreadsheetId: SPREADSHEET_ID, sheetName: SHEET_NAME });
     
-    const result = await staffService.syncStaffFromSheet(
+    const staffList = await sheetsService.fetchStaffFromSheet(
       SPREADSHEET_ID,
       SHEET_NAME
     );
+
+    console.log('スプレッドシートから取得したスタッフ数:', staffList.length);
+
+    // スタッフ情報をデータベースに同期
+    let added = 0;
+    let updated = 0;
+
+    for (const sheetStaff of staffList) {
+      const existing = await staffService.findByEmail(sheetStaff.email);
+      
+      if (existing) {
+        // 既存スタッフの名前を更新
+        if (existing.name !== sheetStaff.name) {
+          await staffService.update(existing.id, { name: sheetStaff.name });
+          updated++;
+        }
+      } else {
+        // 新規スタッフを作成
+        await staffService.create(sheetStaff.email, sheetStaff.name);
+        added++;
+      }
+    }
+
+    const result = {
+      synced: staffList.length,
+      added,
+      updated,
+    };
 
     console.log('スタッフ同期成功:', result);
 

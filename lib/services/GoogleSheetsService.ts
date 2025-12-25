@@ -182,7 +182,14 @@ export class GoogleSheetsService {
 
       return staffList;
     } catch (error: any) {
-      console.error('スプレッドシート読み込みエラー:', error);
+      console.error('スプレッドシート読み込みエラー詳細:', {
+        message: error.message,
+        code: error.code,
+        status: error.status,
+        errors: error.errors,
+        response: error.response?.data,
+        fullError: JSON.stringify(error, null, 2)
+      });
       
       // トークン期限切れの場合
       if (error.code === 401 || error.message?.includes('invalid_grant')) {
@@ -191,7 +198,8 @@ export class GoogleSheetsService {
       
       // アクセス権限がない場合
       if (error.code === 403) {
-        throw new Error('スプレッドシートへのアクセス権限がありません。Googleカレンダー連携の「再接続」ボタンをクリックして、スプレッドシートへのアクセス権限を付与してください。');
+        const errorDetails = error.errors?.[0]?.message || error.message || '不明なエラー';
+        throw new Error(`スプレッドシートへのアクセス権限がありません。詳細: ${errorDetails}。Googleカレンダー連携の「再接続」ボタンをクリックして、スプレッドシートへのアクセス権限を付与してください。`);
       }
       
       throw new Error(`スプレッドシートの読み込みに失敗しました: ${error.message}`);
