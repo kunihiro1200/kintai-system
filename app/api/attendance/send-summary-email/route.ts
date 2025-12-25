@@ -1,12 +1,13 @@
-// 勤怠サマリーメール送信API
+// 勤怠サマリーメール送信API（Gmail API版）
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentStaff } from '@/lib/auth/helpers';
+import { google } from 'googleapis';
 
 /**
  * POST /api/attendance/send-summary-email
- * 勤怠サマリーをメールで送信
+ * 勤怠サマリーをGmail API経由でメール送信
  */
 export async function POST(request: NextRequest) {
   try {
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
 
     // リクエストボディを取得
     const body = await request.json();
-    const { startDate, endDate, summaries, recipientEmail } = body;
+    const { startDate, endDate, summaries, recipientEmail, senderEmail } = body;
 
     // バリデーション
     if (!startDate || !endDate) {
@@ -47,42 +48,66 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!senderEmail) {
+      return NextResponse.json(
+        { success: false, error: '送信元メールアドレスは必須です' },
+        { status: 400 }
+      );
+    }
+
+    // Googleアクセストークンを取得
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.provider_token) {
+      return NextResponse.json(
+        { success: false, error: 'Google認証が必要です。再度ログインしてください。' },
+        { status: 401 }
+      );
+    }
+
+    // OAuth2クライアントを設定
+    const oauth2Client = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET
+    );
+
+    oauth2Client.setCredentials({
+      access_token: session.provider_token,
+      refresh_token: session.provider_refresh_token,
+    });
+
+    // Gmail APIクライアントを作成
+    const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+
     // メール本文を生成
     const emailBody = generateEmailBody(startDate, endDate, summaries);
     const subject = `勤怠サマリー（${startDate}〜${endDate}）`;
 
-    // Resend APIを使用してメール送信
-    const resendApiKey = process.env.RESEND_API_KEY;
-    if (!resendApiKey) {
-      console.error('RESEND_API_KEY が設定されていません');
-      return NextResponse.json(
-        { success: false, error: 'メール送信の設定が完了していません' },
-        { status: 500 }
-      );
-    }
+    // メールメッセージを作成（RFC 2822形式）
+    const message = [
+      `From: ${senderEmail}`,
+      `To: ${recipientEmail}`,
+      `Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`,
+      'MIME-Version: 1.0',
+      'Content-Type: text/html; charset=UTF-8',
+      'Content-Transfer-Encoding: base64',
+      '',
+      Buffer.from(emailBody).toString('base64'),
+    ].join('\n');
 
-    const resendResponse = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${resendApiKey}`,
+    // Base64エンコード（URL-safe）
+    const encodedMessage = Buffer.from(message)
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+
+    // Gmail APIでメール送信
+    await gmail.users.messages.send({
+      userId: 'me',
+      requestBody: {
+        raw: encodedMessage,
       },
-      body: JSON.stringify({
-        from: '勤怠管理システム <tenant@ifoo-oita.com>',
-        to: [recipientEmail],
-        subject: subject,
-        html: emailBody,
-      }),
     });
-
-    if (!resendResponse.ok) {
-      const errorData = await resendResponse.json();
-      console.error('Resend API エラー:', errorData);
-      return NextResponse.json(
-        { success: false, error: 'メール送信に失敗しました' },
-        { status: 500 }
-      );
-    }
 
     // 送信履歴を保存
     const { error: insertError } = await supabase
@@ -106,8 +131,17 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('メール送信エラー:', error);
+    
+    // エラーメッセージを詳細化
+    let errorMessage = 'メール送信に失敗しました';
+    if (error.message?.includes('invalid_grant')) {
+      errorMessage = 'Google認証の有効期限が切れています。再度ログインしてください。';
+    } else if (error.message?.includes('insufficient')) {
+      errorMessage = 'Gmail送信の権限がありません。Google連携を再設定してください。';
+    }
+
     return NextResponse.json(
-      { success: false, error: 'メール送信に失敗しました' },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }

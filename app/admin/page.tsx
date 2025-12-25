@@ -39,6 +39,7 @@ export default function AdminPage() {
   const [emailHistory, setEmailHistory] = useState<any[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [showEmailPreview, setShowEmailPreview] = useState(false);
+  const [senderEmail, setSenderEmail] = useState('tenant@ifoo-oita.com');
 
   // 全社員サマリーを取得
   const fetchSummaries = async () => {
@@ -135,6 +136,11 @@ export default function AdminPage() {
       return;
     }
 
+    if (!senderEmail) {
+      alert('送信元メールアドレスを選択してください');
+      return;
+    }
+
     setSendingEmail(true);
 
     try {
@@ -148,6 +154,7 @@ export default function AdminPage() {
           endDate,
           summaries,
           recipientEmail: 'oitaifoo@gmail.com',
+          senderEmail,
         }),
       });
 
@@ -291,8 +298,33 @@ export default function AdminPage() {
           backgroundColor: '#f0f8ff',
         }}
       >
-        <h3 style={{ marginBottom: '1rem', fontSize: '1rem' }}>メール送信</h3>
+        <h3 style={{ marginBottom: '1rem', fontSize: '1rem' }}>メール送信（Gmail経由）</h3>
         <div style={{ marginBottom: '1rem' }}>
+          <div style={{ marginBottom: '0.75rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.9rem', fontWeight: 'bold' }}>
+              送信元メールアドレス
+            </label>
+            <select
+              value={senderEmail}
+              onChange={(e) => setSenderEmail(e.target.value)}
+              style={{
+                width: '100%',
+                maxWidth: '400px',
+                padding: '0.5rem',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                fontSize: '0.9rem',
+              }}
+            >
+              <option value="tenant@ifoo-oita.com">tenant@ifoo-oita.com</option>
+              <option value="tomoko.kunihiro@ifoo-oita.com">tomoko.kunihiro@ifoo-oita.com</option>
+              <option value="yurine.kimura@ifoo-oita.com">yurine.kimura@ifoo-oita.com</option>
+              <option value="mariko.kume@ifoo-oita.com">mariko.kume@ifoo-oita.com</option>
+            </select>
+            <p style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
+              ※ 選択したアドレスのGmailアカウントでログインしている必要があります
+            </p>
+          </div>
           <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
             送信先: <strong>oitaifoo@gmail.com</strong>
           </p>

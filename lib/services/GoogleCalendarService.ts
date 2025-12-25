@@ -28,6 +28,7 @@ export class GoogleCalendarService {
       'https://www.googleapis.com/auth/calendar.events',
       'https://www.googleapis.com/auth/userinfo.email',
       'https://www.googleapis.com/auth/spreadsheets.readonly', // スプレッドシート読み取り権限
+      'https://www.googleapis.com/auth/gmail.send', // Gmail送信権限
     ];
     
     return this.oauth2Client.generateAuthUrl({
