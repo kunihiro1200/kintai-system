@@ -9,6 +9,7 @@ interface Staff {
   email: string;
   name: string;
   is_system_admin: boolean;
+  is_holiday_staff: boolean;
   created_at: string;
 }
 
@@ -135,6 +136,47 @@ export default function StaffPage() {
       setMessage({
         type: 'error',
         text: 'システム管理者の解除に失敗しました',
+      });
+    }
+  };
+
+  // 祝日対応スタッフを切り替え
+  const handleToggleHolidayStaff = async (staffId: string, currentStatus: boolean) => {
+    const newStatus = !currentStatus;
+    const confirmMessage = newStatus
+      ? 'このスタッフを祝日対応スタッフに設定しますか？（月10時間超過で残業）'
+      : 'このスタッフの祝日対応を解除しますか？（月7時間超過で残業）';
+
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/staff/holiday-staff', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ staffId, isHolidayStaff: newStatus }),
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        setMessage({
+          type: 'success',
+          text: newStatus ? '祝日対応スタッフに設定しました' : '祝日対応を解除しました',
+        });
+        await fetchStaffList();
+      } else {
+        setMessage({
+          type: 'error',
+          text: data.error || '祝日対応スタッフの設定に失敗しました',
+        });
+      }
+    } catch (err) {
+      setMessage({
+        type: 'error',
+        text: '祝日対応スタッフの設定に失敗しました',
       });
     }
   };
@@ -401,6 +443,15 @@ export default function StaffPage() {
                       borderBottom: '2px solid #dee2e6',
                     }}
                   >
+                    祝日対応
+                  </th>
+                  <th
+                    style={{
+                      padding: '1rem',
+                      textAlign: 'center',
+                      borderBottom: '2px solid #dee2e6',
+                    }}
+                  >
                     登録日
                   </th>
                   <th
@@ -436,6 +487,25 @@ export default function StaffPage() {
                     </td>
                     <td style={{ padding: '1rem', color: '#666' }}>
                       {staff.email}
+                    </td>
+                    <td style={{ padding: '1rem', textAlign: 'center' }}>
+                      <button
+                        onClick={() => handleToggleHolidayStaff(staff.id, staff.is_holiday_staff)}
+                        style={{
+                          padding: '0.5rem 1rem',
+                          backgroundColor: staff.is_holiday_staff ? '#28a745' : '#6c757d',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '0.85rem',
+                        }}
+                      >
+                        {staff.is_holiday_staff ? '✓ 祝日対応' : '祝日対応なし'}
+                      </button>
+                      <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
+                        {staff.is_holiday_staff ? '月10h超過で残業' : '月7h超過で残業'}
+                      </div>
                     </td>
                     <td style={{ padding: '1rem', textAlign: 'center', fontSize: '0.9rem' }}>
                       {new Date(staff.created_at).toLocaleDateString('ja-JP')}

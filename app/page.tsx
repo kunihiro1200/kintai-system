@@ -273,9 +273,6 @@ export default function Home() {
         />
       </div>
 
-      {/* Googleカレンダー連携 */}
-      <GoogleCalendarConnect onConnectionChange={setCalendarConnected} />
-
       {/* 休暇ボタン */}
       <div
         style={{
@@ -487,6 +484,9 @@ export default function Home() {
           onSave={handleLeave}
         />
       )}
+
+      {/* Googleカレンダー連携 */}
+      <GoogleCalendarConnect onConnectionChange={setCalendarConnected} />
 
       {/* ログアウトボタン */}
       <div style={{ textAlign: 'center', marginTop: '2rem' }}>

@@ -131,4 +131,51 @@ export class OvertimeCalculator {
       overtime: roundHours(Math.max(0, overtime)),
     };
   }
+
+  /**
+   * 月間労働時間の期間を計算（前月16日〜当月15日）
+   * @param referenceDate 基準日（この日を含む月間期間を計算）
+   * @returns 期間の開始日と終了日
+   */
+  getMonthlyPeriod(referenceDate: Date): { start: Date; end: Date } {
+    const year = referenceDate.getFullYear();
+    const month = referenceDate.getMonth(); // 0-11
+    const day = referenceDate.getDate();
+
+    let periodStart: Date;
+    let periodEnd: Date;
+
+    if (day >= 16) {
+      // 16日以降の場合：当月16日〜翌月15日
+      periodStart = new Date(year, month, 16, 0, 0, 0, 0);
+      periodEnd = new Date(year, month + 1, 15, 23, 59, 59, 999);
+    } else {
+      // 15日以前の場合：前月16日〜当月15日
+      periodStart = new Date(year, month - 1, 16, 0, 0, 0, 0);
+      periodEnd = new Date(year, month, 15, 23, 59, 59, 999);
+    }
+
+    return { start: periodStart, end: periodEnd };
+  }
+
+  /**
+   * 祝日対応に基づく残業時間を計算
+   * @param monthlyWorkHours 月間労働時間
+   * @param isHolidayStaff 祝日対応スタッフかどうか
+   * @returns 残業時間と閾値
+   */
+  calculateMonthlyOvertime(
+    monthlyWorkHours: number,
+    isHolidayStaff: boolean
+  ): { overtime: number; threshold: number } {
+    // 祝日対応スタッフ: 10時間超過で残業
+    // 祝日対応でないスタッフ: 7時間超過で残業
+    const threshold = isHolidayStaff ? 10 : 7;
+    const overtime = monthlyWorkHours - threshold;
+
+    return {
+      overtime: roundHours(Math.max(0, overtime)),
+      threshold,
+    };
+  }
 }

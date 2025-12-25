@@ -195,7 +195,41 @@ interface SystemAdminStatusResponse {
   error?: string;
 }
 ```
-    page: number;
+
+#### 7. PUT /api/staff/holiday-staff
+```typescript
+interface UpdateHolidayStaffRequest {
+  staffId: string;
+  isHolidayStaff: boolean;
+}
+
+interface UpdateHolidayStaffResponse {
+  success: boolean;
+  data?: {
+    staffId: string;
+    isHolidayStaff: boolean;
+  };
+  error?: string;
+}
+```
+
+#### 8. GET /api/attendance/monthly-overtime
+```typescript
+interface MonthlyOvertimeRequest {
+  staffId?: string; // 省略時は認証済みスタッフ
+  referenceDate?: string; // YYYY-MM-DD、省略時は当日
+}
+
+interface MonthlyOvertimeResponse {
+  success: boolean;
+  data?: {
+    staffId: string;
+    isHolidayStaff: boolean;
+    monthlyWorkHours: number;
+    overtimeThreshold: number; // 7 or 10
+    monthlyOvertime: number;
+    periodStart: string; // YYYY-MM-DD
+    periodEnd: string; // YYYY-MM-DD
   };
   error?: string;
 }
@@ -234,6 +268,12 @@ class OvertimeCalculator {
   
   // 実労働時間計算（休憩控除）
   calculateWorkHours(clockIn: Date, clockOut: Date): number
+  
+  // 月間労働時間計算（前月16日〜当月15日）
+  calculateMonthlyWorkHours(staffId: string, referenceDate: Date): number
+  
+  // 祝日対応に基づく残業時間計算
+  calculateMonthlyOvertime(monthlyHours: number, isHolidayStaff: boolean): number
 }
 ```
 
@@ -265,6 +305,12 @@ class StaffService {
   
   // システム管理者のステータス確認
   async getSystemAdminStatus(): Promise<SystemAdminStatus>
+  
+  // 祝日対応スタッフの設定
+  async setHolidayStaff(staffId: string, isHolidayStaff: boolean): Promise<void>
+  
+  // スタッフ情報の取得（祝日対応フラグを含む）
+  async getStaff(staffId: string): Promise<Staff>
 }
 ```
 
@@ -279,6 +325,7 @@ CREATE TABLE staffs (
   email TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
   is_system_admin BOOLEAN DEFAULT FALSE,
+  is_holiday_staff BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -315,6 +362,7 @@ interface Staff {
   email: string;
   name: string;
   isSystemAdmin: boolean;
+  isHolidayStaff: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -478,6 +526,22 @@ interface LeaveSummary {
 ### プロパティ 32: 管理画面での6ヶ月以内社員休暇表示
 *任意の*スタッフが6ヶ月以内社員休暇を記録した場合、管理者の全社員サマリーで正しいカウントが表示される必要があります
 **検証対象: 要件 11.5**
+
+### プロパティ 33: 祝日対応フラグの永続化
+*任意の*スタッフの祝日対応フラグを設定した場合、データベースから再取得した情報は更新後の値を含んでいる必要があります
+**検証対象: 要件 12.3**
+
+### プロパティ 34: 祝日対応スタッフの残業時間計算
+*任意の*祝日対応スタッフの月間労働時間が10時間を超える場合、残業時間は（月間労働時間 - 10時間）と等しい必要があります
+**検証対象: 要件 13.1**
+
+### プロパティ 35: 祝日対応でないスタッフの残業時間計算
+*任意の*祝日対応でないスタッフの月間労働時間が7時間を超える場合、残業時間は（月間労働時間 - 7時間）と等しい必要があります
+**検証対象: 要件 13.2**
+
+### プロパティ 36: 月間労働時間の期間計算
+*任意の*基準日に対して月間労働時間を計算する場合、前月16日から当月15日までの期間の労働時間の合計である必要があります
+**検証対象: 要件 13.3**
 
 ## エラーハンドリング
 

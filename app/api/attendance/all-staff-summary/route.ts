@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     // 全スタッフを取得
     const { data: staffs, error: staffError } = await supabase
       .from('staffs')
-      .select('id, name, email')
+      .select('id, name, email, is_holiday_staff')
       .order('name');
 
     if (staffError) {
@@ -93,6 +93,7 @@ export async function GET(request: NextRequest) {
           staff_id: staff.id,
           staff_name: staff.name,
           staff_email: staff.email,
+          is_holiday_staff: staff.is_holiday_staff,
           work_days: workDays,
           total_work_hours: Math.round(totalWorkHours * 10) / 10,
           total_overtime: Math.round(totalOvertime * 10) / 10,

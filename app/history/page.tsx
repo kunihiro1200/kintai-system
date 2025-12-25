@@ -23,6 +23,14 @@ export default function HistoryPage() {
     compensatoryLeaveCount: 0,
     holidayWorkCount: 0,
   });
+  const [monthlyOvertime, setMonthlyOvertime] = useState<{
+    isHolidayStaff: boolean;
+    monthlyWorkHours: number;
+    overtimeThreshold: number;
+    monthlyOvertime: number;
+    periodStart: string;
+    periodEnd: string;
+  } | null>(null);
 
   // 勤怠履歴を取得
   const fetchHistory = async () => {
@@ -87,6 +95,20 @@ export default function HistoryPage() {
     });
   };
 
+  // 月間残業時間を取得
+  const fetchMonthlyOvertime = async () => {
+    try {
+      const response = await fetch('/api/attendance/monthly-overtime');
+      const data = await response.json();
+
+      if (data.success) {
+        setMonthlyOvertime(data.data);
+      }
+    } catch (err) {
+      console.error('月間残業時間取得エラー:', err);
+    }
+  };
+
   // 記録を削除
   const handleDelete = async (record: AttendanceRecord) => {
     try {
@@ -115,6 +137,7 @@ export default function HistoryPage() {
   useEffect(() => {
     if (user) {
       fetchHistory();
+      fetchMonthlyOvertime();
     }
   }, [user, page, startDate, endDate]);
 
@@ -255,6 +278,63 @@ export default function HistoryPage() {
           </div>
         </div>
       </div>
+
+      {/* 月間残業時間サマリー */}
+      {monthlyOvertime && (
+        <div
+          style={{
+            padding: '1.5rem',
+            marginBottom: '1.5rem',
+            border: '1px solid #e0e0e0',
+            borderRadius: '8px',
+            backgroundColor: '#fff3cd',
+          }}
+        >
+          <h3 style={{ marginBottom: '1rem', fontSize: '1rem', fontWeight: 'bold' }}>
+            月間残業時間（{monthlyOvertime.periodStart} 〜 {monthlyOvertime.periodEnd}）
+          </h3>
+          <div style={{ marginBottom: '1rem' }}>
+            <div style={{ fontSize: '0.85rem', color: '#856404', marginBottom: '0.5rem' }}>
+              <strong>スタッフ区分:</strong>{' '}
+              {monthlyOvertime.isHolidayStaff ? '祝日対応スタッフ' : '通常スタッフ'}
+              {' '}
+              （月{monthlyOvertime.overtimeThreshold}時間超過で残業）
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '0.85rem', color: '#856404', marginBottom: '0.25rem' }}>
+                月間労働時間
+              </div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#856404' }}>
+                {monthlyOvertime.monthlyWorkHours}h
+              </div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '0.85rem', color: '#856404', marginBottom: '0.25rem' }}>
+                残業基準
+              </div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#856404' }}>
+                {monthlyOvertime.overtimeThreshold}h
+              </div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '0.85rem', color: '#856404', marginBottom: '0.25rem' }}>
+                残業時間
+              </div>
+              <div 
+                style={{ 
+                  fontSize: '1.5rem', 
+                  fontWeight: 'bold', 
+                  color: monthlyOvertime.monthlyOvertime > 0 ? '#dc3545' : '#28a745'
+                }}
+              >
+                {monthlyOvertime.monthlyOvertime}h
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {message && (
         <div

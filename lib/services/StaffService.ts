@@ -267,6 +267,42 @@ export class StaffService {
   }
 
   /**
+   * 祝日対応スタッフを設定
+   */
+  async setHolidayStaff(staffId: string, isHolidayStaff: boolean): Promise<Staff> {
+    // スタッフが存在するか確認
+    const staff = await this.findById(staffId);
+    if (!staff) {
+      throw new NotFoundError('スタッフが見つかりません');
+    }
+
+    // 祝日対応フラグを更新
+    const { data, error } = await this.supabase
+      .from('staffs')
+      .update({ is_holiday_staff: isHolidayStaff })
+      .eq('id', staffId)
+      .select()
+      .single();
+
+    if (error) {
+      throw new DatabaseError('祝日対応スタッフの設定に失敗しました');
+    }
+
+    return data as Staff;
+  }
+
+  /**
+   * スタッフ情報を取得（祝日対応フラグを含む）
+   */
+  async getStaff(staffId: string): Promise<Staff> {
+    const staff = await this.findById(staffId);
+    if (!staff) {
+      throw new NotFoundError('スタッフが見つかりません');
+    }
+    return staff;
+  }
+
+  /**
    * Google Sheetsからスタッフ情報を同期
    * @param spreadsheetId スプレッドシートID
    * @param sheetName シート名

@@ -9,6 +9,7 @@ interface StaffSummary {
   staff_id: string;
   staff_name: string;
   staff_email: string;
+  is_holiday_staff: boolean;
   work_days: number;
   total_work_hours: number;
   total_overtime: number;
@@ -219,6 +220,9 @@ export default function AdminPage() {
                   社員名
                 </th>
                 <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #dee2e6' }}>
+                  祝日対応
+                </th>
+                <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #dee2e6' }}>
                   出勤日数
                 </th>
                 <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #dee2e6' }}>
@@ -247,6 +251,22 @@ export default function AdminPage() {
                   <td style={{ padding: '1rem' }}>
                     <div style={{ fontWeight: 'bold' }}>{summary.staff_name}</div>
                     <div style={{ fontSize: '0.85rem', color: '#666' }}>{summary.staff_email}</div>
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'center' }}>
+                    <span
+                      style={{
+                        padding: '0.25rem 0.75rem',
+                        backgroundColor: summary.is_holiday_staff ? '#28a745' : '#6c757d',
+                        color: 'white',
+                        borderRadius: '4px',
+                        fontSize: '0.85rem',
+                      }}
+                    >
+                      {summary.is_holiday_staff ? '✓ 祝日対応' : '通常'}
+                    </span>
+                    <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
+                      {summary.is_holiday_staff ? '月10h超過' : '月7h超過'}
+                    </div>
                   </td>
                   <td style={{ padding: '1rem', textAlign: 'center' }}>
                     {summary.work_days}日
