@@ -64,6 +64,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // スタッフのGoogleトークンを取得（データベースから）
+    const { data: staffData, error: staffError } = await supabase
+      .from('staffs')
+      .select('google_access_token, google_refresh_token')
+      .eq('id', currentStaff.id)
+      .single();
+
+    if (staffError || !staffData?.google_access_token) {
+      return NextResponse.json(
+        { success: false, error: 'Google連携が必要です。Google連携を設定してください。' },
+        { status: 401 }
+      );
+    }
+
     // OAuth2クライアントを設定
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
@@ -71,8 +85,8 @@ export async function POST(request: NextRequest) {
     );
 
     oauth2Client.setCredentials({
-      access_token: session.provider_token,
-      refresh_token: session.provider_refresh_token,
+      access_token: staffData.google_access_token,
+      refresh_token: staffData.google_refresh_token,
     });
 
     // Gmail APIクライアントを作成
