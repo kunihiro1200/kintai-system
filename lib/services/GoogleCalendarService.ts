@@ -7,10 +7,13 @@ export class GoogleCalendarService {
   private oauth2Client;
 
   constructor(private supabase?: SupabaseClient) {
+    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/google/callback`;
+    console.log('OAuth2 Redirect URI:', redirectUri);
+    
     this.oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/google/callback`
+      redirectUri
     );
   }
 
