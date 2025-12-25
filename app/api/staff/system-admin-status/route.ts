@@ -1,9 +1,8 @@
 // システム管理者ステータス取得API
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { StaffService } from '@/lib/services/StaffService';
-import { GoogleCalendarService } from '@/lib/services/GoogleCalendarService';
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,30 +24,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // StaffServiceのインスタンスを作成
-    const staffService = new StaffService(supabase);
+    // RLSをバイパスしてシステム管理者情報を取得
+    const serviceRoleClient = createServiceRoleClient();
+    const staffService = new StaffService(serviceRoleClient);
 
     // システム管理者のステータスを取得
     const systemAdminStatus = await staffService.getSystemAdminStatus();
 
-    // Google連携状態を確認
-    let isGoogleConnected = false;
-    if (systemAdminStatus.hasSystemAdmin) {
-      const systemAdmin = await staffService.getSystemAdmin();
-      if (systemAdmin) {
-        // google_refresh_tokenまたはgoogle_calendar_emailが存在すればGoogle連携済みと判断
-        isGoogleConnected = !!(systemAdmin.google_refresh_token || systemAdmin.google_calendar_email);
-      }
-    }
-
     return NextResponse.json({
       success: true,
-      data: {
-        hasSystemAdmin: systemAdminStatus.hasSystemAdmin,
-        systemAdminEmail: systemAdminStatus.systemAdminEmail,
-        systemAdminName: systemAdminStatus.systemAdminName,
-        isGoogleConnected,
-      },
+      data: systemAdminStatus,
     });
   } catch (error) {
     console.error('システム管理者ステータス取得エラー:', error);

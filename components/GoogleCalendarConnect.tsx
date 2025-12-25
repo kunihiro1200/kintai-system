@@ -42,6 +42,33 @@ export function GoogleCalendarConnect({ onConnectionChange }: GoogleCalendarConn
       // 状態を再確認
       checkConnectionStatus();
     }
+
+    // エラーメッセージを表示
+    const error = params.get('error');
+    if (error) {
+      let errorMessage = 'Googleカレンダー連携に失敗しました';
+      
+      switch (error) {
+        case 'access_denied':
+          errorMessage = 'Googleカレンダーへのアクセスが拒否されました';
+          break;
+        case 'invalid_request':
+          errorMessage = '無効なリクエストです';
+          break;
+        case 'no_email':
+          errorMessage = 'Googleアカウントのメールアドレスを取得できませんでした';
+          break;
+        case 'callback_failed':
+          errorMessage = '認証処理に失敗しました。もう一度お試しください';
+          break;
+      }
+      
+      alert(errorMessage);
+      console.error('Google Calendar連携エラー:', error);
+      
+      // URLパラメータをクリア
+      window.history.replaceState({}, '', window.location.pathname);
+    }
   }, []);
 
   // 連携状態が変わったら親に通知
@@ -53,6 +80,10 @@ export function GoogleCalendarConnect({ onConnectionChange }: GoogleCalendarConn
 
   // Googleカレンダー連携を開始
   const handleConnect = () => {
+    console.log('=== Googleカレンダー連携開始 ===');
+    console.log('現在のURL:', window.location.href);
+    console.log('リダイレクト先:', '/api/auth/google');
+    
     setActionLoading(true);
     window.location.href = '/api/auth/google';
   };

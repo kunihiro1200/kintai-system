@@ -1,4 +1,4 @@
-// システム管理者設定API
+// システム管理者解除API
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
@@ -42,8 +42,8 @@ export async function POST(request: NextRequest) {
     const serviceRoleClient = createServiceRoleClient();
     const staffService = new StaffService(serviceRoleClient);
 
-    // システム管理者を設定
-    const updatedStaff = await staffService.setSystemAdmin(staffId);
+    // システム管理者を解除
+    const updatedStaff = await staffService.removeSystemAdmin(staffId);
 
     return NextResponse.json({
       success: true,
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error('システム管理者設定エラー:', error);
+    console.error('システム管理者解除エラー:', error);
 
     if (error.message === 'スタッフが見つかりません') {
       return NextResponse.json(
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: 'システム管理者の設定に失敗しました',
+        error: 'システム管理者の解除に失敗しました',
       },
       { status: 500 }
     );

@@ -157,8 +157,7 @@ export class StaffService {
   }
 
   /**
-   * システム管理者を設定
-   * 既存のシステム管理者がいる場合は、そのフラグを解除してから新しいシステム管理者を設定
+   * システム管理者を設定（複数人設定可能）
    */
   async setSystemAdmin(staffId: string): Promise<Staff> {
     // スタッフが存在するか確認
@@ -167,18 +166,12 @@ export class StaffService {
       throw new NotFoundError('スタッフが見つかりません');
     }
 
-    // トランザクション的に処理
-    // 1. 既存のシステム管理者のフラグを解除
-    const { error: clearError } = await this.supabase
-      .from('staffs')
-      .update({ is_system_admin: false })
-      .eq('is_system_admin', true);
-
-    if (clearError) {
-      throw new DatabaseError('既存のシステム管理者の解除に失敗しました');
+    // すでにシステム管理者の場合は何もしない
+    if (staff.is_system_admin) {
+      return staff;
     }
 
-    // 2. 新しいシステム管理者を設定
+    // システム管理者に設定
     const { data, error } = await this.supabase
       .from('staffs')
       .update({ is_system_admin: true })
@@ -194,24 +187,53 @@ export class StaffService {
   }
 
   /**
-   * システム管理者を取得
+   * システム管理者を解除
    */
-  async getSystemAdmin(): Promise<Staff | null> {
+  async removeSystemAdmin(staffId: string): Promise<Staff> {
+    // スタッフが存在するか確認
+    const staff = await this.findById(staffId);
+    if (!staff) {
+      throw new NotFoundError('スタッフが見つかりません');
+    }
+
+    // システム管理者を解除
+    const { data, error } = await this.supabase
+      .from('staffs')
+      .update({ is_system_admin: false })
+      .eq('id', staffId)
+      .select()
+      .single();
+
+    if (error) {
+      throw new DatabaseError('システム管理者の解除に失敗しました');
+    }
+
+    return data as Staff;
+  }
+
+  /**
+   * すべてのシステム管理者を取得
+   */
+  async getSystemAdmins(): Promise<Staff[]> {
     const { data, error } = await this.supabase
       .from('staffs')
       .select('*')
       .eq('is_system_admin', true)
-      .single();
+      .order('name');
 
     if (error) {
-      // レコードが見つからない場合はnullを返す
-      if (error.code === 'PGRST116') {
-        return null;
-      }
       throw new DatabaseError('システム管理者の取得に失敗しました');
     }
 
-    return data as Staff;
+    return data as Staff[];
+  }
+
+  /**
+   * システム管理者を取得（後方互換性のため残す）
+   */
+  async getSystemAdmin(): Promise<Staff | null> {
+    const admins = await this.getSystemAdmins();
+    return admins.length > 0 ? admins[0] : null;
   }
 
   /**
@@ -219,21 +241,28 @@ export class StaffService {
    */
   async getSystemAdminStatus(): Promise<{
     hasSystemAdmin: boolean;
-    systemAdminEmail?: string;
-    systemAdminName?: string;
+    systemAdmins: Array<{
+      email: string;
+      name: string;
+      isGoogleConnected: boolean;
+    }>;
   }> {
-    const systemAdmin = await this.getSystemAdmin();
+    const systemAdmins = await this.getSystemAdmins();
 
-    if (!systemAdmin) {
+    if (systemAdmins.length === 0) {
       return {
         hasSystemAdmin: false,
+        systemAdmins: [],
       };
     }
 
     return {
       hasSystemAdmin: true,
-      systemAdminEmail: systemAdmin.email,
-      systemAdminName: systemAdmin.name,
+      systemAdmins: systemAdmins.map(admin => ({
+        email: admin.email,
+        name: admin.name,
+        isGoogleConnected: !!(admin.google_refresh_token || admin.google_calendar_email),
+      })),
     };
   }
 

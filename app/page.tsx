@@ -21,6 +21,7 @@ export default function Home() {
   const [selectedLeaveType, setSelectedLeaveType] = useState<LeaveType | null>(null);
   const [selectedLeaveLabel, setSelectedLeaveLabel] = useState('');
   const [calendarConnected, setCalendarConnected] = useState(false);
+  const [isSystemAdmin, setIsSystemAdmin] = useState(false);
   const [leaveSummary, setLeaveSummary] = useState<LeaveSummary>({
     paid_leave_count: 0,
     compensatory_leave_count: 0,
@@ -57,11 +58,30 @@ export default function Home() {
     }
   };
 
+  // システム管理者かどうかを確認
+  const checkSystemAdmin = async () => {
+    try {
+      const response = await fetch('/api/staff/system-admin-status');
+      const data = await response.json();
+
+      if (data.success && data.data.systemAdmins) {
+        // 現在のユーザーがシステム管理者リストに含まれているか確認
+        const isAdmin = data.data.systemAdmins.some(
+          (admin: any) => admin.email === user?.email
+        );
+        setIsSystemAdmin(isAdmin);
+      }
+    } catch (error) {
+      console.error('システム管理者確認エラー:', error);
+    }
+  };
+
   // 初回読み込み時にステータスと休暇サマリーを取得
   useEffect(() => {
     if (user) {
       fetchStatus();
       fetchLeaveSummary();
+      checkSystemAdmin();
     }
   }, [user]);
 
@@ -185,9 +205,7 @@ export default function Home() {
           >
             勤怠履歴
           </Link>
-          {(user?.email === 'tomoko.kunihiro@ifoo-oita.com' ||
-            user?.email === 'yurine.kimura@ifoo-oita.com' ||
-            user?.email === 'mariko.kume@ifoo-oita.com') && (
+          {isSystemAdmin && (
             <>
               <Link
                 href="/admin"

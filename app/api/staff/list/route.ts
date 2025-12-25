@@ -1,7 +1,7 @@
 // スタッフ一覧取得API
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { getCurrentUser } from '@/lib/auth/helpers';
 import { StaffService } from '@/lib/services/StaffService';
 
@@ -32,7 +32,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const staffService = new StaffService(supabase);
+    // RLSをバイパスしてすべてのスタッフ情報を取得
+    const serviceRoleClient = createServiceRoleClient();
+    const staffService = new StaffService(serviceRoleClient);
     const staffs = await staffService.findAll();
 
     return NextResponse.json({
