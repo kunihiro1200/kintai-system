@@ -7,8 +7,11 @@ export class GoogleCalendarService {
   private oauth2Client;
 
   constructor(private supabase?: SupabaseClient) {
-    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/google/callback`;
+    // 本番環境では直接URLを指定（環境変数の改行問題を回避）
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'https://kintai-system-pi.vercel.app';
+    const redirectUri = `${baseUrl}/api/auth/google/callback`;
     console.log('OAuth2 Redirect URI:', redirectUri);
+    console.log('Base URL:', baseUrl);
     
     this.oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
