@@ -168,7 +168,7 @@ export default function AdminPage() {
           startDate,
           endDate,
           summaries,
-          recipientEmail: 'oitaifoo@gmail.com',
+          recipientEmail: 'wjiia_oi@yahoo.co.jp',
           senderEmail,
         }),
       });
@@ -341,7 +341,7 @@ export default function AdminPage() {
             </p>
           </div>
           <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
-            送信先: <strong>oitaifoo@gmail.com</strong>
+            送信先: <strong>wjiia_oi@yahoo.co.jp</strong>
           </p>
           <p style={{ fontSize: '0.85rem', color: '#666' }}>
             ※ 現在表示中のサマリーデータをメールで送信します
@@ -740,7 +740,7 @@ export default function AdminPage() {
           startDate={startDate}
           endDate={endDate}
           summaries={summaries}
-          recipientEmail="oitaifoo@gmail.com"
+          recipientEmail="wjiia_oi@yahoo.co.jp"
           onClose={() => setShowEmailPreview(false)}
           onSend={handleSendEmail}
         />
