@@ -34,6 +34,9 @@ export default function AdminPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [modalState, setModalState] = useState<ModalState | null>(null);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailHistory, setEmailHistory] = useState<any[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   // 全社員サマリーを取得
   const fetchSummaries = async () => {
@@ -74,12 +77,95 @@ export default function AdminPage() {
         return;
       }
       fetchSummaries();
+      fetchEmailHistory();
     }
   }, [user, startDate, endDate]);
 
   const handleClearFilter = () => {
     setStartDate('');
     setEndDate('');
+  };
+
+  // 前月16日〜当月15日を設定
+  const handleSetMonthlyPeriod = () => {
+    const today = new Date();
+    const currentDay = today.getDate();
+    
+    let periodStart: Date;
+    let periodEnd: Date;
+
+    if (currentDay >= 16) {
+      // 当月16日以降の場合: 当月16日〜翌月15日
+      periodStart = new Date(today.getFullYear(), today.getMonth(), 16);
+      periodEnd = new Date(today.getFullYear(), today.getMonth() + 1, 15);
+    } else {
+      // 当月15日以前の場合: 前月16日〜当月15日
+      periodStart = new Date(today.getFullYear(), today.getMonth() - 1, 16);
+      periodEnd = new Date(today.getFullYear(), today.getMonth(), 15);
+    }
+
+    setStartDate(periodStart.toISOString().split('T')[0]);
+    setEndDate(periodEnd.toISOString().split('T')[0]);
+  };
+
+  // メール送信履歴を取得
+  const fetchEmailHistory = async () => {
+    try {
+      const response = await fetch('/api/attendance/email-history');
+      const data = await response.json();
+      if (data.success) {
+        setEmailHistory(data.data.history);
+      }
+    } catch (err) {
+      console.error('送信履歴の取得エラー:', err);
+    }
+  };
+
+  // メール送信
+  const handleSendEmail = async () => {
+    if (!startDate || !endDate) {
+      alert('開始日と終了日を設定してください');
+      return;
+    }
+
+    if (summaries.length === 0) {
+      alert('送信するデータがありません');
+      return;
+    }
+
+    if (!confirm(`勤怠サマリー（${startDate}〜${endDate}）をoitaifoo@gmail.comに送信しますか？`)) {
+      return;
+    }
+
+    setSendingEmail(true);
+
+    try {
+      const response = await fetch('/api/attendance/send-summary-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          startDate,
+          endDate,
+          summaries,
+          recipientEmail: 'oitaifoo@gmail.com',
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('メールを送信しました');
+        fetchEmailHistory(); // 送信履歴を更新
+      } else {
+        alert(`メール送信に失敗しました: ${data.error}`);
+      }
+    } catch (err) {
+      alert('メール送信に失敗しました');
+    } finally {
+      setSendingEmail(false);
+    }
   };
 
   if (authLoading) {
@@ -149,6 +235,21 @@ export default function AdminPage() {
           </div>
           <div style={{ marginTop: 'auto' }}>
             <button
+              onClick={handleSetMonthlyPeriod}
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: '#17a2b8',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                marginRight: '0.5rem',
+              }}
+            >
+              前月16日〜当月15日
+            </button>
+            <button
               onClick={handleClearFilter}
               style={{
                 padding: '0.5rem 1rem',
@@ -164,6 +265,115 @@ export default function AdminPage() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* メール送信セクション */}
+      <div
+        style={{
+          padding: '1.5rem',
+          marginBottom: '1.5rem',
+          border: '1px solid #e0e0e0',
+          borderRadius: '8px',
+          backgroundColor: '#f0f8ff',
+        }}
+      >
+        <h3 style={{ marginBottom: '1rem', fontSize: '1rem' }}>メール送信</h3>
+        <div style={{ marginBottom: '1rem' }}>
+          <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
+            送信先: <strong>oitaifoo@gmail.com</strong>
+          </p>
+          <p style={{ fontSize: '0.85rem', color: '#666' }}>
+            ※ 現在表示中のサマリーデータをメールで送信します
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <button
+            onClick={handleSendEmail}
+            disabled={sendingEmail || !startDate || !endDate || summaries.length === 0}
+            style={{
+              padding: '0.75rem 1.5rem',
+              backgroundColor: sendingEmail || !startDate || !endDate || summaries.length === 0 ? '#ccc' : '#28a745',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: sendingEmail || !startDate || !endDate || summaries.length === 0 ? 'not-allowed' : 'pointer',
+              fontSize: '0.9rem',
+              fontWeight: 'bold',
+            }}
+          >
+            {sendingEmail ? '送信中...' : 'メール送信'}
+          </button>
+          <button
+            onClick={() => setShowHistory(!showHistory)}
+            style={{
+              padding: '0.75rem 1.5rem',
+              backgroundColor: '#6c757d',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '0.9rem',
+            }}
+          >
+            {showHistory ? '送信履歴を隠す' : '送信履歴を表示'}
+          </button>
+        </div>
+
+        {/* 送信履歴 */}
+        {showHistory && (
+          <div style={{ marginTop: '1.5rem' }}>
+            <h4 style={{ marginBottom: '0.75rem', fontSize: '0.95rem' }}>送信履歴（最新10件）</h4>
+            {emailHistory.length === 0 ? (
+              <p style={{ fontSize: '0.9rem', color: '#666' }}>送信履歴がありません</p>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table
+                  style={{
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    backgroundColor: '#fff',
+                    fontSize: '0.85rem',
+                  }}
+                >
+                  <thead>
+                    <tr style={{ backgroundColor: '#e9ecef' }}>
+                      <th style={{ padding: '0.5rem', textAlign: 'left', borderBottom: '1px solid #dee2e6' }}>
+                        送信日時
+                      </th>
+                      <th style={{ padding: '0.5rem', textAlign: 'left', borderBottom: '1px solid #dee2e6' }}>
+                        送信者
+                      </th>
+                      <th style={{ padding: '0.5rem', textAlign: 'left', borderBottom: '1px solid #dee2e6' }}>
+                        期間
+                      </th>
+                      <th style={{ padding: '0.5rem', textAlign: 'left', borderBottom: '1px solid #dee2e6' }}>
+                        送信先
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {emailHistory.map((history) => (
+                      <tr key={history.id} style={{ borderBottom: '1px solid #dee2e6' }}>
+                        <td style={{ padding: '0.5rem' }}>
+                          {new Date(history.sent_at).toLocaleString('ja-JP')}
+                        </td>
+                        <td style={{ padding: '0.5rem' }}>
+                          {history.staffs?.name || '不明'}
+                        </td>
+                        <td style={{ padding: '0.5rem' }}>
+                          {history.start_date} 〜 {history.end_date}
+                        </td>
+                        <td style={{ padding: '0.5rem' }}>
+                          {history.recipient_email}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {error && (

@@ -92,3 +92,14 @@ export interface HistoryResponse {
   total: number;
   page: number;
 }
+
+export interface EmailHistory {
+  id: string;
+  sent_by_staff_id: string;
+  recipient_email: string;
+  subject: string;
+  start_date: string; // YYYY-MM-DD
+  end_date: string; // YYYY-MM-DD
+  sent_at: Date;
+  created_at: Date;
+}
