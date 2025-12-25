@@ -70,26 +70,34 @@ export default function AdminPage() {
     if (user) {
       console.log('ログイン中のユーザー:', user.email);
       
-      // 管理者チェック
-      const adminEmails = [
-        'tenant@ifoo-oita.com',
-        'tomoko.kunihiro@ifoo-oita.com',
-        'yurine.kimura@ifoo-oita.com',
-        'mariko.kume@ifoo-oita.com',
-      ];
+      // 管理者チェック（データベースベース）
+      checkAdminAccess();
+    }
+  }, [user, startDate, endDate]);
+
+  // 管理者アクセスをチェック
+  const checkAdminAccess = async () => {
+    try {
+      const response = await fetch('/api/staff/system-admin-status');
+      const data = await response.json();
       
-      console.log('管理者リスト:', adminEmails);
-      console.log('アクセス許可:', adminEmails.includes(user.email || ''));
+      console.log('管理者ステータス:', data);
       
-      if (!adminEmails.includes(user.email || '')) {
+      if (!data.isSystemAdmin) {
         setError('アクセス権限がありません');
         setLoading(false);
         return;
       }
+      
+      // 管理者の場合、データを取得
       fetchSummaries();
       fetchEmailHistory();
+    } catch (err) {
+      console.error('管理者チェックエラー:', err);
+      setError('アクセス権限の確認に失敗しました');
+      setLoading(false);
     }
-  }, [user, startDate, endDate]);
+  };
 
   const handleClearFilter = () => {
     setStartDate('');

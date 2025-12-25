@@ -1,23 +1,27 @@
 // 管理者権限チェック
 
-// 管理者のメールアドレスリスト
-const ADMIN_EMAILS = [
-  'tenant@ifoo-oita.com',
-  'tomoko.kunihiro@ifoo-oita.com',
-  'yurine.kimura@ifoo-oita.com',
-  'mariko.kume@ifoo-oita.com',
-];
+import { createClient } from '@/lib/supabase/server';
 
 /**
- * 指定されたメールアドレスが管理者かどうかをチェック
+ * 指定されたメールアドレスが管理者かどうかをデータベースでチェック
  */
-export function isAdmin(email: string): boolean {
-  return ADMIN_EMAILS.includes(email);
-}
-
-/**
- * 管理者のメールアドレスリストを取得
- */
-export function getAdminEmails(): string[] {
-  return [...ADMIN_EMAILS];
+export async function isAdmin(email: string): Promise<boolean> {
+  try {
+    const supabase = await createClient();
+    
+    const { data, error } = await supabase
+      .from('staffs')
+      .select('is_system_admin')
+      .eq('email', email)
+      .single();
+    
+    if (error || !data) {
+      return false;
+    }
+    
+    return data.is_system_admin === true;
+  } catch (error) {
+    console.error('管理者チェックエラー:', error);
+    return false;
+  }
 }

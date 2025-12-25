@@ -12,8 +12,9 @@ export async function GET(request: NextRequest) {
     // 認証チェック
     const staff = await getCurrentStaff();
     
-    // 管理者チェック
-    if (!isAdmin(staff.email)) {
+    // 管理者チェック（データベースベース）
+    const adminCheck = await isAdmin(staff.email);
+    if (!adminCheck) {
       return NextResponse.json(
         { success: false, error: { message: 'アクセス権限がありません' } },
         { status: 403 }
