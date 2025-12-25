@@ -61,6 +61,7 @@ export async function GET(request: NextRequest) {
         let holidayWorkCount = 0;
         let newEmployeeLeaveCount = 0;
         let workDays = 0;
+        const paidLeaveDates: string[] = [];
 
         records?.forEach((record) => {
           if (record.work_hours) {
@@ -74,9 +75,11 @@ export async function GET(request: NextRequest) {
           switch (record.leave_type) {
             case 'paid_leave':
               paidLeaveCount += 1;
+              paidLeaveDates.push(record.date);
               break;
             case 'half_leave':
               paidLeaveCount += 0.5;
+              paidLeaveDates.push(record.date);
               break;
             case 'compensatory_leave':
               compensatoryLeaveCount += 1;
@@ -99,6 +102,7 @@ export async function GET(request: NextRequest) {
           total_work_hours: Math.round(totalWorkHours * 10) / 10,
           total_overtime: Math.round(totalOvertime * 10) / 10,
           paid_leave_count: paidLeaveCount,
+          paid_leave_dates: paidLeaveDates,
           compensatory_leave_count: compensatoryLeaveCount,
           holiday_work_count: holidayWorkCount,
           new_employee_leave_count: newEmployeeLeaveCount,

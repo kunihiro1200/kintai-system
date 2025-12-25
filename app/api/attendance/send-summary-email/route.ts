@@ -217,8 +217,6 @@ function generateEmailBody(startDate: string, endDate: string, summaries: any[])
         <th>総労働時間</th>
         <th>総残業時間</th>
         <th>有給休暇</th>
-        <th>代休</th>
-        <th>休日出勤</th>
       </tr>
     </thead>
     <tbody>
@@ -229,6 +227,18 @@ function generateEmailBody(startDate: string, endDate: string, summaries: any[])
       ? '<span class="holiday-staff">✓ 祝日対応</span>' 
       : '祝日対応なし';
 
+    // 有給休暇の日付をフォーマット
+    let paidLeaveDisplay = `${summary.paid_leave_count}日`;
+    if (summary.paid_leave_dates && summary.paid_leave_dates.length > 0) {
+      const formattedDates = summary.paid_leave_dates
+        .map((date: string) => {
+          const d = new Date(date);
+          return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+        })
+        .join('、');
+      paidLeaveDisplay += `<div class="leave-dates">${formattedDates}</div>`;
+    }
+
     html += `
       <tr>
         <td><strong>${summary.staff_name}</strong><br><small>${summary.staff_email}</small></td>
@@ -236,9 +246,7 @@ function generateEmailBody(startDate: string, endDate: string, summaries: any[])
         <td>${summary.work_days}日</td>
         <td>${summary.total_work_hours.toFixed(1)}時間</td>
         <td>${summary.total_overtime.toFixed(1)}時間</td>
-        <td>${summary.paid_leave_count}日</td>
-        <td>${summary.compensatory_leave_count}日</td>
-        <td>${summary.holiday_work_count}日</td>
+        <td>${paidLeaveDisplay}</td>
       </tr>
     `;
   });
