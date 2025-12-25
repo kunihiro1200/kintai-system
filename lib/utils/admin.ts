@@ -2,6 +2,7 @@
 
 // 管理者のメールアドレスリスト
 const ADMIN_EMAILS = [
+  'tenant@ifoo-oita.com',
   'tomoko.kunihiro@ifoo-oita.com',
   'yurine.kimura@ifoo-oita.com',
   'mariko.kume@ifoo-oita.com',
