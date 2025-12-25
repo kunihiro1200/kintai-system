@@ -14,9 +14,11 @@ interface Staff {
 
 interface SystemAdminStatus {
   hasSystemAdmin: boolean;
-  systemAdminEmail?: string;
-  systemAdminName?: string;
-  isGoogleConnected: boolean;
+  systemAdmins: Array<{
+    email: string;
+    name: string;
+    isGoogleConnected: boolean;
+  }>;
 }
 
 export default function StaffPage() {
@@ -96,6 +98,43 @@ export default function StaffPage() {
       setMessage({
         type: 'error',
         text: 'システム管理者の設定に失敗しました',
+      });
+    }
+  };
+
+  // システム管理者を解除
+  const handleRemoveSystemAdmin = async (staffId: string) => {
+    if (!confirm('このスタッフのシステム管理者権限を解除しますか？')) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/staff/remove-system-admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ staffId }),
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        setMessage({
+          type: 'success',
+          text: 'システム管理者権限を解除しました',
+        });
+        await fetchStaffList();
+        await fetchSystemAdminStatus();
+      } else {
+        setMessage({
+          type: 'error',
+          text: data.error?.message || 'システム管理者の解除に失敗しました',
+        });
+      }
+    } catch (err) {
+      setMessage({
+        type: 'error',
+        text: 'システム管理者の解除に失敗しました',
       });
     }
   };
@@ -205,23 +244,37 @@ export default function StaffPage() {
           </h3>
           {systemAdminStatus.hasSystemAdmin ? (
             <div>
-              <p style={{ marginBottom: '0.5rem' }}>
-                <strong>システム管理者:</strong> {systemAdminStatus.systemAdminName} ({systemAdminStatus.systemAdminEmail})
+              <p style={{ marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                システム管理者 ({systemAdminStatus.systemAdmins.length}人):
               </p>
-              <p style={{ marginBottom: '0.5rem' }}>
-                <strong>Google連携:</strong>{' '}
-                <span
+              {systemAdminStatus.systemAdmins.map((admin, index) => (
+                <div
+                  key={index}
                   style={{
-                    color: systemAdminStatus.isGoogleConnected ? '#28a745' : '#dc3545',
-                    fontWeight: 'bold',
+                    marginBottom: '0.75rem',
+                    paddingLeft: '1rem',
+                    borderLeft: '3px solid #007bff',
                   }}
                 >
-                  {systemAdminStatus.isGoogleConnected ? '✓ 連携済み' : '✗ 未連携'}
-                </span>
-              </p>
-              {!systemAdminStatus.isGoogleConnected && (
+                  <p style={{ marginBottom: '0.25rem' }}>
+                    <strong>{admin.name}</strong> ({admin.email})
+                  </p>
+                  <p style={{ marginBottom: '0', fontSize: '0.9rem' }}>
+                    <strong>Google連携:</strong>{' '}
+                    <span
+                      style={{
+                        color: admin.isGoogleConnected ? '#28a745' : '#dc3545',
+                        fontWeight: 'bold',
+                      }}
+                    >
+                      {admin.isGoogleConnected ? '✓ 連携済み' : '✗ 未連携'}
+                    </span>
+                  </p>
+                </div>
+              ))}
+              {systemAdminStatus.systemAdmins.some(admin => !admin.isGoogleConnected) && (
                 <p style={{ fontSize: '0.85rem', color: '#856404', marginTop: '0.5rem' }}>
-                  ⚠️ システム管理者としてログインし、Googleカレンダー連携を行ってください
+                  ⚠️ Google連携が未完了の管理者がいます。該当の管理者としてログインし、Googleカレンダー連携を行ってください
                 </p>
               )}
             </div>
@@ -258,22 +311,22 @@ export default function StaffPage() {
             ⚠️ システム管理者が設定されていないため、同期できません
           </p>
         )}
-        {systemAdminStatus && systemAdminStatus.hasSystemAdmin && !systemAdminStatus.isGoogleConnected && (
+        {systemAdminStatus && systemAdminStatus.hasSystemAdmin && !systemAdminStatus.systemAdmins.some(admin => admin.isGoogleConnected) && (
           <p style={{ fontSize: '0.85rem', color: '#856404', marginBottom: '1rem' }}>
-            ⚠️ システム管理者のGoogle連携が必要です
+            ⚠️ いずれかのシステム管理者のGoogle連携が必要です
           </p>
         )}
         <button
           onClick={handleSync}
-          disabled={syncing || !systemAdminStatus?.hasSystemAdmin || !systemAdminStatus?.isGoogleConnected}
+          disabled={syncing || !systemAdminStatus?.hasSystemAdmin || !systemAdminStatus?.systemAdmins.some(admin => admin.isGoogleConnected)}
           style={{
             padding: '0.75rem 1.5rem',
             backgroundColor: '#28a745',
             color: 'white',
             border: 'none',
             borderRadius: '4px',
-            cursor: (syncing || !systemAdminStatus?.hasSystemAdmin || !systemAdminStatus?.isGoogleConnected) ? 'not-allowed' : 'pointer',
-            opacity: (syncing || !systemAdminStatus?.hasSystemAdmin || !systemAdminStatus?.isGoogleConnected) ? 0.6 : 1,
+            cursor: (syncing || !systemAdminStatus?.hasSystemAdmin || !systemAdminStatus?.systemAdmins.some(admin => admin.isGoogleConnected)) ? 'not-allowed' : 'pointer',
+            opacity: (syncing || !systemAdminStatus?.hasSystemAdmin || !systemAdminStatus?.systemAdmins.some(admin => admin.isGoogleConnected)) ? 0.6 : 1,
             fontSize: '0.9rem',
           }}
         >
@@ -388,7 +441,22 @@ export default function StaffPage() {
                       {new Date(staff.created_at).toLocaleDateString('ja-JP')}
                     </td>
                     <td style={{ padding: '1rem', textAlign: 'center' }}>
-                      {!staff.is_system_admin && (
+                      {staff.is_system_admin ? (
+                        <button
+                          onClick={() => handleRemoveSystemAdmin(staff.id)}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            backgroundColor: '#dc3545',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '0.85rem',
+                          }}
+                        >
+                          管理者権限を解除
+                        </button>
+                      ) : (
                         <button
                           onClick={() => handleSetSystemAdmin(staff.id)}
                           style={{
