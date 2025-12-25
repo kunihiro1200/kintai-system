@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
         'Authorization': `Bearer ${resendApiKey}`,
       },
       body: JSON.stringify({
-        from: 'Kintai System <onboarding@resend.dev>', // 本番環境では独自ドメインに変更
+        from: '勤怠管理システム <tenant@ifoo-oita.com>',
         to: [recipientEmail],
         subject: subject,
         html: emailBody,
