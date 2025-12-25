@@ -191,7 +191,7 @@ export class GoogleSheetsService {
       
       // アクセス権限がない場合
       if (error.code === 403) {
-        throw new Error('スプレッドシートへのアクセス権限がありません。システム管理者のGoogleアカウントに共有してください。');
+        throw new Error('スプレッドシートへのアクセス権限がありません。Googleカレンダー連携の「再接続」ボタンをクリックして、スプレッドシートへのアクセス権限を付与してください。');
       }
       
       throw new Error(`スプレッドシートの読み込みに失敗しました: ${error.message}`);

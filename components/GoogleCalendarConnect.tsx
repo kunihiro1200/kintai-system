@@ -88,6 +88,13 @@ export function GoogleCalendarConnect({ onConnectionChange }: GoogleCalendarConn
     window.location.href = '/api/auth/google';
   };
 
+  // Googleカレンダー連携を再接続（新しいスコープを取得）
+  const handleReconnect = () => {
+    console.log('=== Googleカレンダー再接続開始 ===');
+    setActionLoading(true);
+    window.location.href = '/api/auth/google';
+  };
+
   // Googleカレンダー連携を解除
   const handleDisconnect = async () => {
     if (!confirm('Googleカレンダーの連携を解除しますか？')) {
@@ -167,22 +174,57 @@ export function GoogleCalendarConnect({ onConnectionChange }: GoogleCalendarConn
             </p>
           </div>
 
-          <button
-            onClick={handleDisconnect}
-            disabled={actionLoading}
+          <div
             style={{
-              padding: '0.75rem 1.5rem',
-              backgroundColor: '#dc3545',
-              color: 'white',
-              border: 'none',
+              padding: '0.75rem',
+              backgroundColor: '#fff3cd',
+              border: '1px solid #ffeaa7',
               borderRadius: '4px',
-              cursor: actionLoading ? 'not-allowed' : 'pointer',
-              opacity: actionLoading ? 0.6 : 1,
-              fontSize: '0.9rem',
+              marginBottom: '1rem',
+              color: '#856404',
+              fontSize: '0.85rem',
             }}
           >
-            {actionLoading ? '処理中...' : '連携を解除'}
-          </button>
+            <p style={{ margin: 0 }}>
+              💡 スプレッドシート同期でエラーが出る場合は、「再接続」ボタンをクリックしてスプレッドシートへのアクセス権限を付与してください。
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <button
+              onClick={handleReconnect}
+              disabled={actionLoading}
+              style={{
+                padding: '0.75rem 1.5rem',
+                backgroundColor: '#4285f4',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: actionLoading ? 'not-allowed' : 'pointer',
+                opacity: actionLoading ? 0.6 : 1,
+                fontSize: '0.9rem',
+              }}
+            >
+              {actionLoading ? '処理中...' : '再接続'}
+            </button>
+
+            <button
+              onClick={handleDisconnect}
+              disabled={actionLoading}
+              style={{
+                padding: '0.75rem 1.5rem',
+                backgroundColor: '#dc3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: actionLoading ? 'not-allowed' : 'pointer',
+                opacity: actionLoading ? 0.6 : 1,
+                fontSize: '0.9rem',
+              }}
+            >
+              {actionLoading ? '処理中...' : '連携を解除'}
+            </button>
+          </div>
         </div>
       ) : (
         <div>

@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: {
-            message: error.message,
+            message: 'スプレッドシートへのアクセス権限がありません。Googleカレンダー連携の「再接続」ボタンをクリックして、スプレッドシートへのアクセス権限を付与してください。',
             code: 'ACCESS_DENIED'
           },
         },
