@@ -144,6 +144,8 @@ export default function AdminPage() {
       const data = await response.json();
       if (data.success) {
         setEmailHistory(data.data.history);
+      } else {
+        console.error('送信履歴の取得エラー:', data.error);
       }
     } catch (err) {
       console.error('送信履歴の取得エラー:', err);

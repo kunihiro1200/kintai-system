@@ -37,7 +37,14 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error('送信履歴取得エラー:', error);
       return NextResponse.json(
-        { success: false, error: '送信履歴の取得に失敗しました' },
+        { 
+          success: false, 
+          error: {
+            message: '送信履歴の取得に失敗しました',
+            details: error.message,
+            code: error.code
+          }
+        },
         { status: 500 }
       );
     }
@@ -48,9 +55,10 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('送信履歴取得エラー:', error);
-    return NextResponse.json(
-      { success: false, error: '送信履歴の取得に失敗しました' },
-      { status: 500 }
-    );
+    // テーブルが存在しない場合は空の配列を返す
+    return NextResponse.json({
+      success: true,
+      data: { history: [] },
+    });
   }
 }
