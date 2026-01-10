@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
 
     // リクエストボディを取得
     const body = await request.json();
-    const { startDate, endDate, summaries, recipientEmail, senderEmail } = body;
+    const { startDate, endDate, summaries, recipientEmail, senderEmail, additionalMessage } = body;
 
     // バリデーション
     if (!startDate || !endDate) {
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
     // メール本文を生成
-    const emailBody = generateEmailBody(startDate, endDate, summaries);
+    const emailBody = generateEmailBody(startDate, endDate, summaries, additionalMessage);
     const subject = `勤怠サマリー（${startDate}〜${endDate}）`;
 
     // メールメッセージを作成（RFC 2822形式）
@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
 /**
  * メール本文を生成
  */
-function generateEmailBody(startDate: string, endDate: string, summaries: any[]): string {
+function generateEmailBody(startDate: string, endDate: string, summaries: any[], additionalMessage?: string): string {
   let html = `
 <!DOCTYPE html>
 <html>
@@ -196,12 +196,14 @@ function generateEmailBody(startDate: string, endDate: string, summaries: any[])
     td { padding: 10px; border-bottom: 1px solid #ddd; }
     tr:hover { background-color: #f5f5f5; }
     .summary { background-color: #ecf0f1; padding: 15px; border-radius: 5px; margin: 20px 0; }
+    .additional-message { background-color: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107; white-space: pre-wrap; }
     .leave-dates { font-size: 0.9em; color: #7f8c8d; margin-top: 5px; }
     .holiday-staff { color: #27ae60; font-weight: bold; }
   </style>
 </head>
 <body>
   <h1>勤怠サマリー</h1>
+  ${additionalMessage ? `<div class="additional-message">${additionalMessage}</div>` : ''}
   <div class="summary">
     <p><strong>期間:</strong> ${startDate} 〜 ${endDate}</p>
     <p><strong>対象:</strong> 全社員 ${summaries.length}名</p>

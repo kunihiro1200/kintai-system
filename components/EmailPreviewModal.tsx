@@ -24,6 +24,7 @@ interface EmailPreviewModalProps {
   endDate: string;
   summaries: StaffSummary[];
   recipientEmail: string;
+  additionalMessage?: string;
   onClose: () => void;
   onSend: () => void;
 }
@@ -33,6 +34,7 @@ export function EmailPreviewModal({
   endDate,
   summaries,
   recipientEmail,
+  additionalMessage,
   onClose,
   onSend,
 }: EmailPreviewModalProps) {
@@ -130,6 +132,18 @@ export function EmailPreviewModal({
             <h1 style={{ color: '#2c3e50', borderBottom: '2px solid #3498db', paddingBottom: '10px' }}>
               勤怠サマリー
             </h1>
+            
+            {additionalMessage && (
+              <div style={{ 
+                backgroundColor: '#fff3cd', 
+                padding: '15px', 
+                borderRadius: '5px', 
+                margin: '20px 0',
+                borderLeft: '4px solid #ffc107'
+              }}>
+                <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{additionalMessage}</p>
+              </div>
+            )}
             
             <div style={{ backgroundColor: '#ecf0f1', padding: '15px', borderRadius: '5px', margin: '20px 0' }}>
               <p style={{ margin: '0 0 10px 0' }}>

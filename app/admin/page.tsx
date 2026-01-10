@@ -41,6 +41,7 @@ export default function AdminPage() {
   const [showHistory, setShowHistory] = useState(false);
   const [showEmailPreview, setShowEmailPreview] = useState(false);
   const [senderEmail, setSenderEmail] = useState('tenant@ifoo-oita.com');
+  const [additionalMessage, setAdditionalMessage] = useState('');
 
   // 全社員サマリーを取得
   const fetchSummaries = async () => {
@@ -190,6 +191,7 @@ export default function AdminPage() {
           summaries,
           recipientEmail: 'wjiia_oi@yahoo.co.jp',
           senderEmail,
+          additionalMessage,
         }),
       });
 
@@ -358,6 +360,29 @@ export default function AdminPage() {
             </select>
             <p style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
               ※ 選択したアドレスのGmailアカウントでログインしている必要があります
+            </p>
+          </div>
+          <div style={{ marginBottom: '0.75rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.9rem', fontWeight: 'bold' }}>
+              追加メッセージ（任意）
+            </label>
+            <textarea
+              value={additionalMessage}
+              onChange={(e) => setAdditionalMessage(e.target.value)}
+              placeholder="メール本文の最初に表示される追加メッセージを入力できます（例：今月の注意事項など）"
+              rows={3}
+              style={{
+                width: '100%',
+                padding: '0.5rem',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                fontSize: '0.9rem',
+                fontFamily: 'inherit',
+                resize: 'vertical',
+              }}
+            />
+            <p style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
+              ※ 入力した内容は勤怠サマリー表の前に表示されます
             </p>
           </div>
           <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
@@ -761,6 +786,7 @@ export default function AdminPage() {
           endDate={endDate}
           summaries={summaries}
           recipientEmail="wjiia_oi@yahoo.co.jp"
+          additionalMessage={additionalMessage}
           onClose={() => setShowEmailPreview(false)}
           onSend={handleSendEmail}
         />
