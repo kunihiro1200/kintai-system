@@ -2,13 +2,14 @@
 Fix admin dashboard to show all staff attendance data
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceRoleClient } from '@/lib/supabase/server';
 import { getCurrentStaff } from '@/lib/auth/helpers';
 import { isAdmin } from '@/lib/utils/admin';
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    // データ取得用のサービスロールクライアント（RLSをバイパス）
+    const supabase = createServiceRoleClient();
     
     // 認証チェック
     const staff = await getCurrentStaff();
@@ -60,6 +61,23 @@ export async function GET(request: NextRequest) {
       is_active: s.is_active 
     })));
     
+    // 角井さんを探す（複数の条件で検索）
+    const kakuiStaff = filteredStaffs.find(s => 
+      s.name.includes('角井') || 
+      s.email.includes('kakui') ||
+      s.email === 'hiromitsu-kakui@ifoo-oita.com'
+    );
+    if (kakuiStaff) {
+      console.log('=== 角井さんを発見 ===');
+      console.log('名前:', kakuiStaff.name);
+      console.log('メール:', kakuiStaff.email);
+      console.log('ID:', kakuiStaff.id);
+      console.log('is_active:', kakuiStaff.is_active);
+    } else {
+      console.log('⚠️ 角井さんが見つかりません');
+      console.log('全スタッフのメールアドレス:', filteredStaffs.map(s => s.email));
+    }
+    
     // 非アクティブなスタッフが含まれていないか確認
     const inactiveStaffs = filteredStaffs.filter(s => !s.is_active);
     if (inactiveStaffs.length > 0) {
@@ -78,6 +96,21 @@ export async function GET(request: NextRequest) {
         if (endDate) query = query.lte('date', endDate);
 
         const { data: records } = await query;
+
+        // 角井さんのデータをデバッグ
+        const isKakui = staff.name.includes('角井') || 
+                       staff.email.includes('kakui') || 
+                       staff.email === 'hiromitsu-kakui@ifoo-oita.com';
+        
+        if (isKakui) {
+          console.log('=== 角井さんのデータ ===');
+          console.log('名前:', staff.name);
+          console.log('メール:', staff.email);
+          console.log('スタッフID:', staff.id);
+          console.log('期間:', startDate, '~', endDate);
+          console.log('取得したレコード数:', records?.length || 0);
+          console.log('レコード詳細:', JSON.stringify(records, null, 2));
+        }
 
         // 集計
         let totalWorkHours = 0;
@@ -102,10 +135,18 @@ export async function GET(request: NextRequest) {
             case 'paid_leave':
               paidLeaveCount += 1;
               paidLeaveDates.push(record.date);
+              // 角井さんのデバッグ
+              if (isKakui) {
+                console.log('有給休暇を検出:', record.date, record.leave_type);
+              }
               break;
             case 'half_leave':
               paidLeaveCount += 0.5;
               paidLeaveDates.push(record.date);
+              // 角井さんのデバッグ
+              if (isKakui) {
+                console.log('半休を検出:', record.date, record.leave_type);
+              }
               break;
             case 'compensatory_leave':
               compensatoryLeaveCount += 1;
@@ -118,6 +159,13 @@ export async function GET(request: NextRequest) {
               break;
           }
         });
+
+        // 角井さんの集計結果をデバッグ
+        if (isKakui) {
+          console.log('=== 角井さんの集計結果 ===');
+          console.log('有給休暇日数:', paidLeaveCount);
+          console.log('有給休暇日付:', paidLeaveDates);
+        }
 
         return {
           staff_id: staff.id,
