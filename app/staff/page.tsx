@@ -58,7 +58,15 @@ export default function StaffPage() {
       const data = await response.json();
 
       if (data.success) {
-        setStaffList(data.data.staffs);
+        // 特定のスタッフを非表示にする
+        const hiddenEmails = [
+          'naomi.hirose@ifoo-oita.com',
+          'tomoko.kunihiro@ifoo-oita.com',
+        ];
+        const filteredStaffs = data.data.staffs.filter(
+          (staff: Staff) => !hiddenEmails.includes(staff.email)
+        );
+        setStaffList(filteredStaffs);
       } else {
         setError(data.error?.message || 'スタッフ一覧の取得に失敗しました');
       }
