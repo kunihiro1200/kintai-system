@@ -120,20 +120,10 @@ export default function AdminPage() {
   // 前月16日〜当月15日を設定
   const handleSetMonthlyPeriod = () => {
     const today = new Date();
-    const currentDay = today.getDate();
     
-    let periodStart: Date;
-    let periodEnd: Date;
-
-    if (currentDay >= 16) {
-      // 当月16日以降の場合: 当月16日〜翌月15日
-      periodStart = new Date(today.getFullYear(), today.getMonth(), 16);
-      periodEnd = new Date(today.getFullYear(), today.getMonth() + 1, 15);
-    } else {
-      // 当月15日以前の場合: 前月16日〜当月15日
-      periodStart = new Date(today.getFullYear(), today.getMonth() - 1, 16);
-      periodEnd = new Date(today.getFullYear(), today.getMonth(), 15);
-    }
+    // 常に前月16日〜当月15日を設定
+    const periodStart = new Date(today.getFullYear(), today.getMonth() - 1, 16);
+    const periodEnd = new Date(today.getFullYear(), today.getMonth(), 15);
 
     // ローカルタイムゾーンで日付文字列を生成（UTCへの変換を避ける）
     const formatDate = (date: Date) => {
