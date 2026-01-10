@@ -91,7 +91,18 @@ export default function AdminPage() {
       
       console.log('管理者ステータス:', data);
       
-      if (!data.isSystemAdmin) {
+      if (!data.success || !data.data) {
+        setError('アクセス権限がありません');
+        setLoading(false);
+        return;
+      }
+
+      // 現在のユーザーがシステム管理者リストに含まれているかチェック
+      const isAdmin = data.data.systemAdmins?.some(
+        (admin: { email: string }) => admin.email === user?.email
+      );
+
+      if (!isAdmin) {
         setError('アクセス権限がありません');
         setLoading(false);
         return;
