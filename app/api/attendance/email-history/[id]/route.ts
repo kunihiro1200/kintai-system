@@ -10,7 +10,7 @@ import { getCurrentStaff } from '@/lib/auth/helpers';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
@@ -24,7 +24,7 @@ export async function GET(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // 履歴詳細を取得
     const { data: history, error } = await supabase
