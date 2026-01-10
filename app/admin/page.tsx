@@ -76,6 +76,13 @@ export default function AdminPage() {
       checkAdminAccess();
     }
   }, [user, startDate, endDate]);
+  
+  // 初回マウント時のみ履歴を取得（エラーがあっても無視）
+  useEffect(() => {
+    if (user) {
+      fetchEmailHistory();
+    }
+  }, [user]);
 
   // 管理者アクセスをチェック
   const checkAdminAccess = async () => {
@@ -104,7 +111,7 @@ export default function AdminPage() {
       
       // 管理者の場合、データを取得
       fetchSummaries();
-      fetchEmailHistory();
+      // 履歴取得は別のuseEffectで実行
     } catch (err) {
       console.error('管理者チェックエラー:', err);
       setError('アクセス権限の確認に失敗しました');

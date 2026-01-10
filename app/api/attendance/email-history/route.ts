@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 送信履歴を取得（最新10件）
+    // テーブルが存在しない場合のエラーをキャッチ
     const { data: history, error } = await supabase
       .from('email_history')
       .select(`
@@ -36,6 +37,14 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('送信履歴取得エラー:', error);
+      // テーブルが存在しない場合は空の配列を返す
+      if (error.code === '42P01' || error.message.includes('does not exist')) {
+        console.log('email_historyテーブルが存在しません。空の配列を返します。');
+        return NextResponse.json({
+          success: true,
+          data: { history: [] },
+        });
+      }
       return NextResponse.json(
         { 
           success: false, 
@@ -51,7 +60,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: { history },
+      data: { history: history || [] },
     });
   } catch (error: any) {
     console.error('送信履歴取得エラー:', error);
