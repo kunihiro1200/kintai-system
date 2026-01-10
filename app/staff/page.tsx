@@ -37,7 +37,10 @@ export default function StaffPage() {
       const response = await fetch('/api/staff/system-admin-status');
       const data = await response.json();
 
+      console.log('システム管理者ステータスAPIレスポンス:', data);
+
       if (data.success) {
+        console.log('システム管理者ステータス設定:', data.data);
         setSystemAdminStatus(data.data);
       }
     } catch (err) {
@@ -370,6 +373,14 @@ export default function StaffPage() {
             cursor: (syncing || !systemAdminStatus?.hasSystemAdmin || !systemAdminStatus?.systemAdmins || !systemAdminStatus.systemAdmins.some(admin => admin.isGoogleConnected)) ? 'not-allowed' : 'pointer',
             opacity: (syncing || !systemAdminStatus?.hasSystemAdmin || !systemAdminStatus?.systemAdmins || !systemAdminStatus.systemAdmins.some(admin => admin.isGoogleConnected)) ? 0.6 : 1,
             fontSize: '0.9rem',
+          }}
+          onMouseEnter={() => {
+            console.log('同期ボタンの状態チェック:');
+            console.log('  syncing:', syncing);
+            console.log('  systemAdminStatus:', systemAdminStatus);
+            console.log('  hasSystemAdmin:', systemAdminStatus?.hasSystemAdmin);
+            console.log('  systemAdmins:', systemAdminStatus?.systemAdmins);
+            console.log('  Google連携済み管理者:', systemAdminStatus?.systemAdmins?.filter(admin => admin.isGoogleConnected));
           }}
         >
           {syncing ? '同期中...' : 'スプレッドシートから同期'}

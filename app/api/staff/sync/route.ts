@@ -98,24 +98,51 @@ export async function POST(request: NextRequest) {
     );
 
     console.log('スプレッドシートから取得したスタッフ数:', staffList.length);
+    console.log('スプレッドシートのスタッフ詳細:', staffList.map(s => ({ email: s.email, name: s.name, is_active: s.is_active })));
 
     // スタッフ情報をデータベースに同期
     let added = 0;
     let updated = 0;
+    let deactivated = 0;
 
+    // スプレッドシートのメールアドレスリストを作成
+    const sheetEmails = new Set(staffList.map((s: { email: string }) => s.email));
+
+    // スプレッドシートに存在するスタッフを処理
     for (const sheetStaff of staffList) {
       const existing = await staffService.findByEmail(sheetStaff.email);
       
       if (existing) {
-        // 既存スタッフの名前を更新
-        if (existing.name !== sheetStaff.name) {
-          await staffService.update(existing.id, { name: sheetStaff.name });
+        console.log(`既存スタッフ: ${sheetStaff.email}, DB is_active: ${existing.is_active}, Sheet is_active: ${sheetStaff.is_active}`);
+        // 既存スタッフの名前またはis_activeを更新
+        if (existing.name !== sheetStaff.name || existing.is_active !== sheetStaff.is_active) {
+          console.log(`更新: ${sheetStaff.email} - name: ${existing.name} -> ${sheetStaff.name}, is_active: ${existing.is_active} -> ${sheetStaff.is_active}`);
+          await staffService.update(existing.id, { 
+            name: sheetStaff.name,
+            is_active: sheetStaff.is_active
+          });
           updated++;
         }
       } else {
+        console.log(`新規スタッフ: ${sheetStaff.email}, is_active: ${sheetStaff.is_active}`);
         // 新規スタッフを作成
-        await staffService.create(sheetStaff.email, sheetStaff.name);
+        const newStaff = await staffService.create(sheetStaff.email, sheetStaff.name);
+        // is_activeを設定（デフォルトはtrueなので、falseの場合のみ更新）
+        if (!sheetStaff.is_active) {
+          await staffService.update(newStaff.id, { is_active: false });
+        }
         added++;
+      }
+    }
+
+    // データベースに存在するが、スプレッドシートに存在しないスタッフをis_active=falseに設定
+    const allStaffs = await staffService.findAll();
+    console.log('データベースの全スタッフ数:', allStaffs.length);
+    for (const dbStaff of allStaffs) {
+      if (!sheetEmails.has(dbStaff.email) && dbStaff.is_active) {
+        console.log(`非アクティブ化: ${dbStaff.email} (スプレッドシートに存在しない)`);
+        await staffService.update(dbStaff.id, { is_active: false });
+        deactivated++;
       }
     }
 
@@ -123,6 +150,7 @@ export async function POST(request: NextRequest) {
       synced: staffList.length,
       added,
       updated,
+      deactivated,
     };
 
     console.log('スタッフ同期成功:', result);
@@ -133,6 +161,7 @@ export async function POST(request: NextRequest) {
         message: 'スタッフ情報を同期しました',
         added: result.added,
         updated: result.updated,
+        deactivated: result.deactivated,
         total: result.synced,
       },
     });

@@ -24,23 +24,39 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 現在のユーザーのスタッフ情報を取得
-    const { data: staff, error: staffError } = await supabase
+    // 全てのシステム管理者を取得
+    const { data: systemAdmins, error: adminError } = await supabase
       .from('staffs')
-      .select('is_system_admin')
-      .eq('email', user.email)
-      .single();
+      .select('email, name, google_access_token, google_refresh_token')
+      .eq('is_system_admin', true);
 
-    if (staffError || !staff) {
-      return NextResponse.json({
-        success: true,
-        isSystemAdmin: false,
-      });
+    if (adminError) {
+      console.error('システム管理者取得エラー:', adminError);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'システム管理者情報の取得に失敗しました',
+        },
+        { status: 500 }
+      );
     }
+
+    // システム管理者が存在するかチェック
+    const hasSystemAdmin = systemAdmins && systemAdmins.length > 0;
+
+    // システム管理者の詳細情報を構築
+    const adminDetails = systemAdmins?.map((admin) => ({
+      email: admin.email,
+      name: admin.name,
+      isGoogleConnected: !!(admin.google_access_token || admin.google_refresh_token),
+    })) || [];
 
     return NextResponse.json({
       success: true,
-      isSystemAdmin: staff.is_system_admin === true,
+      data: {
+        hasSystemAdmin,
+        systemAdmins: adminDetails,
+      },
     });
   } catch (error) {
     console.error('システム管理者ステータス取得エラー:', error);

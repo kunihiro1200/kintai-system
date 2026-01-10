@@ -94,9 +94,9 @@ export class StaffService {
   /**
    * スタッフ情報を更新
    */
-  async update(id: string, updates: { name?: string; email?: string }): Promise<Staff> {
+  async update(id: string, updates: { name?: string; email?: string; is_active?: boolean }): Promise<Staff> {
     // 更新するフィールドがあるか確認
-    if (!updates.name && !updates.email) {
+    if (!updates.name && !updates.email && updates.is_active === undefined) {
       throw new Error('更新する情報がありません');
     }
 
@@ -122,6 +122,7 @@ export class StaffService {
     const updateData: any = {};
     if (updates.name) updateData.name = updates.name.trim();
     if (updates.email) updateData.email = updates.email.trim();
+    if (updates.is_active !== undefined) updateData.is_active = updates.is_active;
 
     const { data, error } = await this.supabase
       .from('staffs')

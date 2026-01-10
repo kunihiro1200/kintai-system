@@ -8,6 +8,7 @@ import { StaffService } from './StaffService';
 export interface SheetStaff {
   email: string;
   name: string;
+  is_active: boolean; // I列「通常」カラム
 }
 
 export class GoogleSheetsService {
@@ -153,8 +154,8 @@ export class GoogleSheetsService {
 
       const sheets = google.sheets({ version: 'v4', auth });
 
-      // シートからデータを取得（D列: 姓名、E列: メールアドレス）
-      const range = `${sheetName}!D2:E`; // ヘッダー行をスキップ
+      // シートからデータを取得（D列: 姓名、E列: メールアドレス、I列: 通常）
+      const range = `${sheetName}!D2:I`; // ヘッダー行をスキップ
       
       const response = await sheets.spreadsheets.values.get({
         spreadsheetId,
@@ -173,10 +174,11 @@ export class GoogleSheetsService {
       for (const row of rows) {
         const name = row[0]?.trim();  // D列: 姓名
         const email = row[1]?.trim(); // E列: メールアドレス
+        const isActive = row[5]?.toString().toUpperCase() === 'TRUE'; // I列: 通常（D=0, E=1, F=2, G=3, H=4, I=5）
         
         // メールアドレスと名前が両方存在する場合のみ追加
         if (email && name) {
-          staffList.push({ email, name });
+          staffList.push({ email, name, is_active: isActive });
         }
       }
 

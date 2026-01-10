@@ -19,6 +19,7 @@ export interface Staff {
   name: string;
   is_system_admin: boolean;
   is_holiday_staff: boolean; // 祝日対応スタッフフラグ
+  is_active: boolean; // 在籍中かどうか（スプレッドシートのI列「通常」カラムに対応）
   google_calendar_email?: string;
   google_access_token?: string;
   google_refresh_token?: string;
