@@ -34,7 +34,10 @@ export function EmailHistoryDetailModal({ historyId, onClose }: EmailHistoryDeta
     try {
       const response = await fetch(`/api/attendance/email-history/${historyId}`);
       const data = await response.json();
+      console.log('履歴詳細データ:', data);
       if (data.success) {
+        console.log('email_content:', data.data.email_content);
+        console.log('summaries:', data.data.email_content?.summaries);
         setDetail(data.data);
       }
     } catch (error) {
@@ -160,63 +163,69 @@ export function EmailHistoryDetailModal({ historyId, onClose }: EmailHistoryDeta
         {/* サマリーテーブル */}
         <div>
           <h3 style={{ marginBottom: '1rem' }}>勤怠サマリー</h3>
-          <div style={{ overflowX: 'auto' }}>
-            <table
-              style={{
-                width: '100%',
-                borderCollapse: 'collapse',
-                fontSize: '0.9rem',
-              }}
-            >
-              <thead>
-                <tr style={{ backgroundColor: '#f8f9fa' }}>
-                  <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>
-                    社員名
-                  </th>
-                  <th style={{ padding: '0.75rem', textAlign: 'center', borderBottom: '2px solid #dee2e6' }}>
-                    祝日対応
-                  </th>
-                  <th style={{ padding: '0.75rem', textAlign: 'center', borderBottom: '2px solid #dee2e6' }}>
-                    出勤日数
-                  </th>
-                  <th style={{ padding: '0.75rem', textAlign: 'center', borderBottom: '2px solid #dee2e6' }}>
-                    総残業時間
-                  </th>
-                  <th style={{ padding: '0.75rem', textAlign: 'center', borderBottom: '2px solid #dee2e6' }}>
-                    確定残業時間
-                  </th>
-                  <th style={{ padding: '0.75rem', textAlign: 'center', borderBottom: '2px solid #dee2e6' }}>
-                    有給休暇
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {detail.email_content.summaries.map((summary: any, index: number) => (
-                  <tr key={index} style={{ borderBottom: '1px solid #dee2e6' }}>
-                    <td style={{ padding: '0.75rem' }}>
-                      <div style={{ fontWeight: 'bold' }}>{summary.staff_name}</div>
-                      <div style={{ fontSize: '0.85rem', color: '#666' }}>{summary.staff_email}</div>
-                    </td>
-                    <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                      {summary.is_holiday_staff ? '✓ 祝日対応' : '通常'}
-                    </td>
-                    <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                      {summary.work_days}日
-                    </td>
-                    <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                      {summary.total_overtime}時間
-                    </td>
-                    <td style={{ padding: '0.75rem', textAlign: 'center', fontWeight: 'bold' }}>
-                      {summary.confirmed_overtime}時間
-                    </td>
-                    <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                      {summary.paid_leave_count}日
-                    </td>
+          {!detail.email_content.summaries || detail.email_content.summaries.length === 0 ? (
+            <p style={{ color: '#666', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
+              サマリーデータがありません
+            </p>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table
+                style={{
+                  width: '100%',
+                  borderCollapse: 'collapse',
+                  fontSize: '0.9rem',
+                }}
+              >
+                <thead>
+                  <tr style={{ backgroundColor: '#f8f9fa' }}>
+                    <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>
+                      社員名
+                    </th>
+                    <th style={{ padding: '0.75rem', textAlign: 'center', borderBottom: '2px solid #dee2e6' }}>
+                      祝日対応
+                    </th>
+                    <th style={{ padding: '0.75rem', textAlign: 'center', borderBottom: '2px solid #dee2e6' }}>
+                      出勤日数
+                    </th>
+                    <th style={{ padding: '0.75rem', textAlign: 'center', borderBottom: '2px solid #dee2e6' }}>
+                      総残業時間
+                    </th>
+                    <th style={{ padding: '0.75rem', textAlign: 'center', borderBottom: '2px solid #dee2e6' }}>
+                      確定残業時間
+                    </th>
+                    <th style={{ padding: '0.75rem', textAlign: 'center', borderBottom: '2px solid #dee2e6' }}>
+                      有給休暇
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {detail.email_content.summaries.map((summary: any, index: number) => (
+                    <tr key={index} style={{ borderBottom: '1px solid #dee2e6' }}>
+                      <td style={{ padding: '0.75rem' }}>
+                        <div style={{ fontWeight: 'bold' }}>{summary.staff_name}</div>
+                        <div style={{ fontSize: '0.85rem', color: '#666' }}>{summary.staff_email}</div>
+                      </td>
+                      <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                        {summary.is_holiday_staff ? '✓ 祝日対応' : '通常'}
+                      </td>
+                      <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                        {summary.work_days}日
+                      </td>
+                      <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                        {summary.total_overtime}時間
+                      </td>
+                      <td style={{ padding: '0.75rem', textAlign: 'center', fontWeight: 'bold' }}>
+                        {summary.confirmed_overtime}時間
+                      </td>
+                      <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                        {summary.paid_leave_count}日
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* 閉じるボタン */}
