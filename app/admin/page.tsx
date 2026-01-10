@@ -15,6 +15,7 @@ interface StaffSummary {
   total_work_hours: number;
   total_overtime: number;
   paid_leave_count: number;
+  paid_leave_dates: string[];
   compensatory_leave_count: number;
   holiday_work_count: number;
   new_employee_leave_count: number;
