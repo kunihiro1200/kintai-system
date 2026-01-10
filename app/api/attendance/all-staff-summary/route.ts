@@ -1,5 +1,4 @@
 // 全社員の勤怠サマリー取得API
-Fix admin dashboard to show all staff attendance data
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
