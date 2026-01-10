@@ -142,12 +142,13 @@ export class StaffService {
   }
 
   /**
-   * すべてのスタッフを取得
+   * すべてのアクティブなスタッフを取得
    */
   async findAll(): Promise<Staff[]> {
     const { data, error } = await this.supabase
       .from('staffs')
       .select('*')
+      .eq('is_active', true)
       .order('created_at', { ascending: false });
 
     if (error) {
