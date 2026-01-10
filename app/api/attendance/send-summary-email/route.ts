@@ -233,7 +233,7 @@ function generateEmailBody(startDate: string, endDate: string, summaries: any[])
       const formattedDates = summary.paid_leave_dates
         .map((date: string) => {
           const d = new Date(date);
-          return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+          return `${d.getMonth() + 1}/${d.getDate()}`;
         })
         .join('、');
       paidLeaveDisplay += `<div class="leave-dates">${formattedDates}</div>`;

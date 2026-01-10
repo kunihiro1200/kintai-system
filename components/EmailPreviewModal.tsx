@@ -13,6 +13,7 @@ interface StaffSummary {
   total_work_hours: number;
   total_overtime: number;
   paid_leave_count: number;
+  paid_leave_dates: string[];
   compensatory_leave_count: number;
   holiday_work_count: number;
   new_employee_leave_count: number;
@@ -178,7 +179,17 @@ export function EmailPreviewModal({
                     <td style={{ padding: '10px' }}>{summary.work_days}日</td>
                     <td style={{ padding: '10px' }}>{summary.total_work_hours.toFixed(1)}時間</td>
                     <td style={{ padding: '10px' }}>{summary.total_overtime.toFixed(1)}時間</td>
-                    <td style={{ padding: '10px' }}>{summary.paid_leave_count}日</td>
+                    <td style={{ padding: '10px' }}>
+                      {summary.paid_leave_count}日
+                      {summary.paid_leave_dates && summary.paid_leave_dates.length > 0 && (
+                        <div style={{ fontSize: '0.85em', color: '#7f8c8d', marginTop: '5px' }}>
+                          {summary.paid_leave_dates.map((date) => {
+                            const d = new Date(date);
+                            return `${d.getMonth() + 1}/${d.getDate()}`;
+                          }).join('、')}
+                        </div>
+                      )}
+                    </td>
                     <td style={{ padding: '10px' }}>{summary.compensatory_leave_count}日</td>
                     <td style={{ padding: '10px' }}>{summary.holiday_work_count}日</td>
                   </tr>
