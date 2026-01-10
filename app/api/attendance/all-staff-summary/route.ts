@@ -26,11 +26,10 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
-    // 全スタッフを取得（is_active=trueのみ）
+    // 全スタッフを取得
     const { data: staffs, error: staffError } = await supabase
       .from('staffs')
       .select('id, name, email, is_holiday_staff')
-      .eq('is_active', true)
       .order('name');
 
     if (staffError) {
