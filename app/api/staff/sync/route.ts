@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
     }
 
     // データベースに存在するが、スプレッドシートに存在しないスタッフをis_active=falseに設定
-    const allStaffs = await staffService.findAll();
+    const allStaffs = await staffService.findAllIncludingInactive();
     console.log('データベースの全スタッフ数:', allStaffs.length);
     for (const dbStaff of allStaffs) {
       if (!sheetEmails.has(dbStaff.email) && dbStaff.is_active) {

@@ -32,10 +32,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // RLSをバイパスしてすべてのスタッフ情報を取得
+    // RLSをバイパスしてすべてのスタッフ情報を取得（非アクティブも含む）
     const serviceRoleClient = createServiceRoleClient();
     const staffService = new StaffService(serviceRoleClient);
-    const staffs = await staffService.findAll();
+    const staffs = await staffService.findAllIncludingInactive();
+
+    console.log('スタッフ一覧API - 取得したスタッフ数:', staffs.length);
+    console.log('スタッフ一覧API - スタッフ詳細:', staffs.map(s => ({ 
+      name: s.name, 
+      email: s.email, 
+      is_active: s.is_active 
+    })));
 
     return NextResponse.json({
       success: true,

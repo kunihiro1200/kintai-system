@@ -159,6 +159,22 @@ export class StaffService {
   }
 
   /**
+   * すべてのスタッフを取得（アクティブ・非アクティブ両方）
+   */
+  async findAllIncludingInactive(): Promise<Staff[]> {
+    const { data, error } = await this.supabase
+      .from('staffs')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw new DatabaseError('スタッフ一覧の取得に失敗しました');
+    }
+
+    return data as Staff[];
+  }
+
+  /**
    * システム管理者を設定（複数人設定可能）
    */
   async setSystemAdmin(staffId: string): Promise<Staff> {

@@ -10,6 +10,7 @@ interface Staff {
   name: string;
   is_system_admin: boolean;
   is_holiday_staff: boolean;
+  is_active: boolean;
   created_at: string;
 }
 
@@ -58,15 +59,7 @@ export default function StaffPage() {
       const data = await response.json();
 
       if (data.success) {
-        // 特定のスタッフを非表示にする
-        const hiddenEmails = [
-          'naomi.hirose@ifoo-oita.com',
-          'tomoko.kunihiro@ifoo-oita.com',
-        ];
-        const filteredStaffs = data.data.staffs.filter(
-          (staff: Staff) => !hiddenEmails.includes(staff.email)
-        );
-        setStaffList(filteredStaffs);
+        setStaffList(data.data.staffs);
       } else {
         setError(data.error?.message || 'スタッフ一覧の取得に失敗しました');
       }
@@ -462,6 +455,15 @@ export default function StaffPage() {
                       borderBottom: '2px solid #dee2e6',
                     }}
                   >
+                    ステータス
+                  </th>
+                  <th
+                    style={{
+                      padding: '1rem',
+                      textAlign: 'center',
+                      borderBottom: '2px solid #dee2e6',
+                    }}
+                  >
                     祝日対応
                   </th>
                   <th
@@ -486,7 +488,14 @@ export default function StaffPage() {
               </thead>
               <tbody>
                 {staffList.map((staff) => (
-                  <tr key={staff.id} style={{ borderBottom: '1px solid #dee2e6' }}>
+                  <tr 
+                    key={staff.id} 
+                    style={{ 
+                      borderBottom: '1px solid #dee2e6',
+                      backgroundColor: staff.is_active ? 'transparent' : '#f8f9fa',
+                      opacity: staff.is_active ? 1 : 0.6,
+                    }}
+                  >
                     <td style={{ padding: '1rem', fontWeight: 'bold' }}>
                       {staff.name}
                       {staff.is_system_admin && (
@@ -508,16 +517,32 @@ export default function StaffPage() {
                       {staff.email}
                     </td>
                     <td style={{ padding: '1rem', textAlign: 'center' }}>
+                      <span
+                        style={{
+                          padding: '0.25rem 0.75rem',
+                          backgroundColor: staff.is_active ? '#d4edda' : '#f8d7da',
+                          color: staff.is_active ? '#155724' : '#721c24',
+                          fontSize: '0.85rem',
+                          borderRadius: '4px',
+                          fontWeight: 'bold',
+                        }}
+                      >
+                        {staff.is_active ? 'アクティブ' : '非アクティブ'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '1rem', textAlign: 'center' }}>
                       <button
                         onClick={() => handleToggleHolidayStaff(staff.id, staff.is_holiday_staff)}
+                        disabled={!staff.is_active}
                         style={{
                           padding: '0.5rem 1rem',
                           backgroundColor: staff.is_holiday_staff ? '#28a745' : '#6c757d',
                           color: 'white',
                           border: 'none',
                           borderRadius: '4px',
-                          cursor: 'pointer',
+                          cursor: staff.is_active ? 'pointer' : 'not-allowed',
                           fontSize: '0.85rem',
+                          opacity: staff.is_active ? 1 : 0.5,
                         }}
                       >
                         {staff.is_holiday_staff ? '✓ 祝日対応' : '祝日対応なし'}
@@ -533,14 +558,16 @@ export default function StaffPage() {
                       {staff.is_system_admin ? (
                         <button
                           onClick={() => handleRemoveSystemAdmin(staff.id)}
+                          disabled={!staff.is_active}
                           style={{
                             padding: '0.5rem 1rem',
                             backgroundColor: '#dc3545',
                             color: 'white',
                             border: 'none',
                             borderRadius: '4px',
-                            cursor: 'pointer',
+                            cursor: staff.is_active ? 'pointer' : 'not-allowed',
                             fontSize: '0.85rem',
+                            opacity: staff.is_active ? 1 : 0.5,
                           }}
                         >
                           管理者権限を解除
@@ -548,14 +575,16 @@ export default function StaffPage() {
                       ) : (
                         <button
                           onClick={() => handleSetSystemAdmin(staff.id)}
+                          disabled={!staff.is_active}
                           style={{
                             padding: '0.5rem 1rem',
                             backgroundColor: '#007bff',
                             color: 'white',
                             border: 'none',
                             borderRadius: '4px',
-                            cursor: 'pointer',
+                            cursor: staff.is_active ? 'pointer' : 'not-allowed',
                             fontSize: '0.85rem',
+                            opacity: staff.is_active ? 1 : 0.5,
                           }}
                         >
                           システム管理者に設定

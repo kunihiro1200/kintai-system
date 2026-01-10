@@ -55,15 +55,7 @@ export default function AdminPage() {
       const data = await response.json();
 
       if (data.success) {
-        // 特定のスタッフを非表示にする
-        const hiddenEmails = [
-          'naomi.hirose@ifoo-oita.com',
-          'tomoko.kunihiro@ifoo-oita.com',
-        ];
-        const filteredSummaries = data.data.summaries.filter(
-          (summary: StaffSummary) => !hiddenEmails.includes(summary.staff_email)
-        );
-        setSummaries(filteredSummaries);
+        setSummaries(data.data.summaries);
       } else {
         setError(data.error?.message || 'サマリーの取得に失敗しました');
       }

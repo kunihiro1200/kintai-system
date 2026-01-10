@@ -26,10 +26,11 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
-    // 全スタッフを取得
+    // アクティブなスタッフのみを取得
     const { data: staffs, error: staffError } = await supabase
       .from('staffs')
-      .select('id, name, email, is_holiday_staff')
+      .select('id, name, email, is_holiday_staff, is_active')
+      .eq('is_active', true)
       .order('name');
 
     if (staffError) {
@@ -38,6 +39,19 @@ export async function GET(request: NextRequest) {
         { success: false, error: { message: 'スタッフの取得に失敗しました' } },
         { status: 500 }
       );
+    }
+
+    console.log('全社員サマリー - 取得したスタッフ数:', staffs.length);
+    console.log('全社員サマリー - スタッフ詳細:', staffs.map(s => ({ 
+      name: s.name, 
+      email: s.email, 
+      is_active: s.is_active 
+    })));
+    
+    // 非アクティブなスタッフが含まれていないか確認
+    const inactiveStaffs = staffs.filter(s => !s.is_active);
+    if (inactiveStaffs.length > 0) {
+      console.warn('⚠️ 非アクティブなスタッフが含まれています:', inactiveStaffs);
     }
 
     // 各スタッフの勤怠サマリーを取得

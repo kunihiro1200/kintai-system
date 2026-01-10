@@ -174,7 +174,15 @@ export class GoogleSheetsService {
       for (const row of rows) {
         const name = row[0]?.trim();  // D列: 姓名
         const email = row[1]?.trim(); // E列: メールアドレス
-        const isActive = row[5]?.toString().toUpperCase() === 'TRUE'; // I列: 通常（D=0, E=1, F=2, G=3, H=4, I=5）
+        
+        // I列: 通常（D=0, E=1, F=2, G=3, H=4, I=5）
+        // チェックボックスの値は "TRUE"/"FALSE" または true/false として返される可能性がある
+        const isActiveValue = row[5];
+        const isActive = isActiveValue === true || 
+                        isActiveValue === 'TRUE' || 
+                        isActiveValue?.toString().toUpperCase() === 'TRUE';
+        
+        console.log(`スプレッドシート行データ: name=${name}, email=${email}, isActiveValue=${isActiveValue}, isActive=${isActive}`);
         
         // メールアドレスと名前が両方存在する場合のみ追加
         if (email && name) {
