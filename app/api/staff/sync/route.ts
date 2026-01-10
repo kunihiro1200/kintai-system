@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
     );
 
     console.log('スプレッドシートから取得したスタッフ数:', staffList.length);
-    console.log('スプレッドシートのスタッフ詳細:', staffList.map(s => ({ email: s.email, name: s.name, is_active: s.is_active })));
+    console.log('スプレッドシートのスタッフ詳細:', staffList.map((s: { email: string; name: string; is_active: boolean }) => ({ email: s.email, name: s.name, is_active: s.is_active })));
 
     // スタッフ情報をデータベースに同期
     let added = 0;
