@@ -1,21 +1,21 @@
 // 特定の休暇タイプの日付一覧を取得するAPI
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceRoleClient } from '@/lib/supabase/server';
 import { getCurrentStaff } from '@/lib/auth/helpers';
+import { isAdmin } from '@/lib/utils/admin';
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    // データ取得用のサービスロールクライアント（RLSをバイパス）
+    const supabase = createServiceRoleClient();
     
-    // 認証チェック（管理者のみ）
+    // 認証チェック
     const staff = await getCurrentStaff();
-    const adminEmails = [
-      'tomoko.kunihiro@ifoo-oita.com',
-      'yurine.kimura@ifoo-oita.com',
-      'mariko.kume@ifoo-oita.com',
-    ];
-    if (!adminEmails.includes(staff.email)) {
+    
+    // 管理者チェック（データベースベース）
+    const adminCheck = await isAdmin(staff.email);
+    if (!adminCheck) {
       return NextResponse.json(
         { success: false, error: { message: 'アクセス権限がありません' } },
         { status: 403 }

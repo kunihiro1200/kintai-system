@@ -113,6 +113,7 @@ export async function GET(request: NextRequest) {
 
         // 集計
         let totalWorkHours = 0;
+        let totalOvertimeBeforeThreshold = 0; // 閾値適用前の総残業時間
         let paidLeaveCount = 0;
         let compensatoryLeaveCount = 0;
         let holidayWorkCount = 0;
@@ -124,6 +125,10 @@ export async function GET(request: NextRequest) {
           if (record.work_hours) {
             totalWorkHours += record.work_hours;
             workDays += 1;
+          }
+          // 各日の残業時間を合計
+          if (record.overtime) {
+            totalOvertimeBeforeThreshold += record.overtime;
           }
 
           switch (record.leave_type) {
@@ -156,10 +161,11 @@ export async function GET(request: NextRequest) {
         });
 
         // 祝日対応スタッフかどうかで残業時間の閾値を変更
-        // 祝日対応: 10時間超過で残業
-        // 通常: 7時間超過で残業
+        // 月の総残業時間から閾値を引く
+        // 祝日対応: 月10時間超過で残業としてカウント
+        // 通常: 月7時間超過で残業としてカウント
         const overtimeThreshold = staff.is_holiday_staff ? 10 : 7;
-        const totalOvertime = Math.max(0, totalWorkHours - overtimeThreshold);
+        const totalOvertime = Math.max(0, totalOvertimeBeforeThreshold - overtimeThreshold);
 
         // 角井さんの集計結果をデバッグ
         if (isKakui) {
@@ -167,8 +173,9 @@ export async function GET(request: NextRequest) {
           console.log('有給休暇日数:', paidLeaveCount);
           console.log('有給休暇日付:', paidLeaveDates);
           console.log('総労働時間:', totalWorkHours);
+          console.log('閾値適用前の総残業時間:', totalOvertimeBeforeThreshold);
           console.log('残業閾値:', overtimeThreshold);
-          console.log('残業時間:', totalOvertime);
+          console.log('表示する残業時間:', totalOvertime);
         }
 
         return {
