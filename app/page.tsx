@@ -64,8 +64,12 @@ export default function Home() {
       const response = await fetch('/api/staff/system-admin-status');
       const data = await response.json();
 
-      if (data.success) {
-        setIsSystemAdmin(data.isSystemAdmin === true);
+      if (data.success && data.data) {
+        // 現在のユーザーがシステム管理者リストに含まれているかチェック
+        const isAdmin = data.data.systemAdmins?.some(
+          (admin: { email: string }) => admin.email === user?.email
+        );
+        setIsSystemAdmin(isAdmin || false);
       }
     } catch (error) {
       console.error('システム管理者確認エラー:', error);
