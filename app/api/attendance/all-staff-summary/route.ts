@@ -184,8 +184,8 @@ export async function GET(request: NextRequest) {
           staff_email: staff.email,
           is_holiday_staff: staff.is_holiday_staff,
           work_days: workDays,
-          total_work_hours: Math.round(totalWorkHours * 10) / 10,
-          total_overtime: Math.round(totalOvertime * 10) / 10,
+          total_overtime: Math.round(totalOvertimeBeforeThreshold * 10) / 10, // 閾値適用前の総残業時間
+          confirmed_overtime: Math.round(totalOvertime * 10) / 10, // 確定残業時間（閾値適用後）
           paid_leave_count: paidLeaveCount,
           paid_leave_dates: paidLeaveDates,
           compensatory_leave_count: compensatoryLeaveCount,

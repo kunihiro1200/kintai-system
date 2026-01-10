@@ -216,8 +216,8 @@ function generateEmailBody(startDate: string, endDate: string, summaries: any[],
         <th>社員名</th>
         <th>祝日対応</th>
         <th>出勤日数</th>
-        <th>総労働時間</th>
         <th>総残業時間</th>
+        <th>確定残業時間</th>
         <th>有給休暇</th>
       </tr>
     </thead>
@@ -246,8 +246,8 @@ function generateEmailBody(startDate: string, endDate: string, summaries: any[],
         <td><strong>${summary.staff_name}</strong><br><small>${summary.staff_email}</small></td>
         <td>${holidayStaffLabel}</td>
         <td>${summary.work_days}日</td>
-        <td>${summary.total_work_hours.toFixed(1)}時間</td>
         <td>${summary.total_overtime.toFixed(1)}時間</td>
+        <td>${summary.confirmed_overtime.toFixed(1)}時間</td>
         <td>${paidLeaveDisplay}</td>
       </tr>
     `;

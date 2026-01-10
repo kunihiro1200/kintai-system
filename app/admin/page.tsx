@@ -12,8 +12,8 @@ interface StaffSummary {
   staff_email: string;
   is_holiday_staff: boolean;
   work_days: number;
-  total_work_hours: number;
   total_overtime: number;
+  confirmed_overtime: number;
   paid_leave_count: number;
   paid_leave_dates: string[];
   compensatory_leave_count: number;
@@ -541,11 +541,11 @@ export default function AdminPage() {
                 <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #dee2e6' }}>
                   出勤日数
                 </th>
-                <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #dee2e6' }}>
-                  総労働時間
+                <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #dee2e6', backgroundColor: '#e7f3ff' }}>
+                  総残業時間
                 </th>
                 <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #dee2e6', backgroundColor: '#fff3cd' }}>
-                  総残業時間
+                  確定残業時間
                 </th>
                 <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #dee2e6' }}>
                   有給休暇
@@ -587,11 +587,11 @@ export default function AdminPage() {
                   <td style={{ padding: '1rem', textAlign: 'center' }}>
                     {summary.work_days}日
                   </td>
-                  <td style={{ padding: '1rem', textAlign: 'center' }}>
-                    {summary.total_work_hours}時間
+                  <td style={{ padding: '1rem', textAlign: 'center', backgroundColor: '#e7f3ff' }}>
+                    {summary.total_overtime}時間
                   </td>
                   <td style={{ padding: '1rem', textAlign: 'center', fontWeight: 'bold', color: '#856404', backgroundColor: '#fff3cd' }}>
-                    {summary.total_overtime}時間
+                    {summary.confirmed_overtime}時間
                   </td>
                   <td style={{ padding: '1rem', textAlign: 'center' }}>
                     <button
@@ -713,20 +713,20 @@ export default function AdminPage() {
                   {summaries.reduce((sum, s) => sum + s.work_days, 0)}日
                 </div>
               </div>
-              <div style={{ textAlign: 'center', padding: '1rem', backgroundColor: '#fff', borderRadius: '4px' }}>
-                <div style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
-                  総労働時間
+              <div style={{ textAlign: 'center', padding: '1rem', backgroundColor: '#e7f3ff', borderRadius: '4px' }}>
+                <div style={{ fontSize: '0.9rem', color: '#0056b3', marginBottom: '0.5rem' }}>
+                  総残業時間
                 </div>
-                <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#28a745' }}>
-                  {summaries.reduce((sum, s) => sum + s.total_work_hours, 0).toFixed(1)}時間
+                <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#0056b3' }}>
+                  {summaries.reduce((sum, s) => sum + s.total_overtime, 0).toFixed(1)}時間
                 </div>
               </div>
               <div style={{ textAlign: 'center', padding: '1rem', backgroundColor: '#fff3cd', borderRadius: '4px' }}>
                 <div style={{ fontSize: '0.9rem', color: '#856404', marginBottom: '0.5rem' }}>
-                  総残業時間
+                  確定残業時間
                 </div>
                 <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#856404' }}>
-                  {summaries.reduce((sum, s) => sum + s.total_overtime, 0).toFixed(1)}時間
+                  {summaries.reduce((sum, s) => sum + s.confirmed_overtime, 0).toFixed(1)}時間
                 </div>
               </div>
               <div style={{ textAlign: 'center', padding: '1rem', backgroundColor: '#fff', borderRadius: '4px' }}>

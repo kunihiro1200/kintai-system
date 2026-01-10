@@ -10,8 +10,8 @@ interface StaffSummary {
   staff_email: string;
   is_holiday_staff: boolean;
   work_days: number;
-  total_work_hours: number;
   total_overtime: number;
+  confirmed_overtime: number;
   paid_leave_count: number;
   paid_leave_dates: string[];
   compensatory_leave_count: number;
@@ -162,8 +162,8 @@ export function EmailPreviewModal({
                   <th style={{ padding: '12px', textAlign: 'left' }}>社員名</th>
                   <th style={{ padding: '12px', textAlign: 'left' }}>祝日対応</th>
                   <th style={{ padding: '12px', textAlign: 'left' }}>出勤日数</th>
-                  <th style={{ padding: '12px', textAlign: 'left' }}>総労働時間</th>
                   <th style={{ padding: '12px', textAlign: 'left' }}>総残業時間</th>
+                  <th style={{ padding: '12px', textAlign: 'left' }}>確定残業時間</th>
                   <th style={{ padding: '12px', textAlign: 'left' }}>有給休暇</th>
                   <th style={{ padding: '12px', textAlign: 'left' }}>代休</th>
                   <th style={{ padding: '12px', textAlign: 'left' }}>休日出勤</th>
@@ -191,8 +191,8 @@ export function EmailPreviewModal({
                       )}
                     </td>
                     <td style={{ padding: '10px' }}>{summary.work_days}日</td>
-                    <td style={{ padding: '10px' }}>{summary.total_work_hours.toFixed(1)}時間</td>
                     <td style={{ padding: '10px' }}>{summary.total_overtime.toFixed(1)}時間</td>
+                    <td style={{ padding: '10px' }}>{summary.confirmed_overtime.toFixed(1)}時間</td>
                     <td style={{ padding: '10px' }}>
                       {summary.paid_leave_count}日
                       {summary.paid_leave_dates && summary.paid_leave_dates.length > 0 && (
