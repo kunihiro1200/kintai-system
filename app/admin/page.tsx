@@ -3,6 +3,7 @@
 import { useAuth } from '@/components/AuthProvider';
 import { LeaveDatesModal } from '@/components/LeaveDatesModal';
 import { EmailPreviewModal } from '@/components/EmailPreviewModal';
+import { EmailHistoryDetailModal } from '@/components/EmailHistoryDetailModal';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
@@ -42,6 +43,7 @@ export default function AdminPage() {
   const [showEmailPreview, setShowEmailPreview] = useState(false);
   const [senderEmail, setSenderEmail] = useState('tenant@ifoo-oita.com');
   const [additionalMessage, setAdditionalMessage] = useState('');
+  const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
 
   // 全社員サマリーを取得
   const fetchSummaries = async () => {
@@ -458,7 +460,16 @@ export default function AdminPage() {
                   </thead>
                   <tbody>
                     {emailHistory.map((history) => (
-                      <tr key={history.id} style={{ borderBottom: '1px solid #dee2e6' }}>
+                      <tr 
+                        key={history.id} 
+                        style={{ 
+                          borderBottom: '1px solid #dee2e6',
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => setSelectedHistoryId(history.id)}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      >
                         <td style={{ padding: '0.5rem' }}>
                           {new Date(history.sent_at).toLocaleString('ja-JP')}
                         </td>
@@ -788,6 +799,14 @@ export default function AdminPage() {
           additionalMessage={additionalMessage}
           onClose={() => setShowEmailPreview(false)}
           onSend={handleSendEmail}
+        />
+      )}
+
+      {/* 履歴詳細モーダル */}
+      {selectedHistoryId && (
+        <EmailHistoryDetailModal
+          historyId={selectedHistoryId}
+          onClose={() => setSelectedHistoryId(null)}
         />
       )}
     </main>

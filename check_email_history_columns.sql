@@ -1,0 +1,6 @@
+-- email_historyテーブルのカラム一覧を確認
+SELECT column_name, data_type, is_nullable, column_default
+FROM information_schema.columns
+WHERE table_schema = 'public' 
+AND table_name = 'email_history'
+ORDER BY ordinal_position;

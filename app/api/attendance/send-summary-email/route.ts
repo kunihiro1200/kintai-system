@@ -136,11 +136,15 @@ export async function POST(request: NextRequest) {
     const { error: insertError } = await supabase
       .from('email_history')
       .insert({
-        sent_by_staff_id: senderStaffData.id, // 実際の送信者のIDを使用
+        sent_by_staff_id: senderStaffData.id,
         recipient_email: recipientEmail,
         subject: subject,
         start_date: startDate,
         end_date: endDate,
+        email_content: {
+          summaries: summaries,
+          additionalMessage: additionalMessage || null,
+        },
       });
 
     if (insertError) {
