@@ -109,6 +109,7 @@ export async function POST(request: NextRequest) {
     const message = [
       `From: ${senderEmail}`,
       `To: ${recipientEmail}`,
+      `Cc: tenant@ifoo-oita.com`,
       `Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`,
       'MIME-Version: 1.0',
       'Content-Type: text/html; charset=UTF-8',
