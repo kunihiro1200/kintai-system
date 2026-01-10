@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
     const { error: insertError } = await supabase
       .from('email_history')
       .insert({
-        sent_by_staff_id: currentStaff.id,
+        sent_by_staff_id: senderStaffData.id, // 実際の送信者のIDを使用
         recipient_email: recipientEmail,
         subject: subject,
         start_date: startDate,
@@ -145,7 +145,15 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
       console.error('送信履歴の保存エラー:', insertError);
+      console.error('送信履歴の保存エラー詳細:', {
+        code: insertError.code,
+        message: insertError.message,
+        details: insertError.details,
+        hint: insertError.hint,
+      });
       // メール送信は成功しているので、エラーにはしない
+    } else {
+      console.log('送信履歴を保存しました');
     }
 
     return NextResponse.json({
