@@ -7,6 +7,9 @@ import { EmailHistoryDetailModal } from '@/components/EmailHistoryDetailModal';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
+// 動的レンダリングを強制（ビルド時のプリレンダリングを無効化）
+export const dynamic = 'force-dynamic';
+
 interface StaffSummary {
   staff_id: string;
   staff_name: string;
