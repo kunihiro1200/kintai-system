@@ -26,6 +26,14 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
+    // 除外するメールアドレスのリスト
+    const EXCLUDED_EMAILS = [
+      'tenant@ifoo-oita.com',
+      'oitaifoo@gmail.com',
+      'tomoko.kunihiro@ifoo-oita.com',
+      'naomi.hirose@ifoo-oita.com',
+    ];
+
     // アクティブなスタッフのみを取得
     const { data: staffs, error: staffError } = await supabase
       .from('staffs')
@@ -41,22 +49,25 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('全社員サマリー - 取得したスタッフ数:', staffs.length);
-    console.log('全社員サマリー - スタッフ詳細:', staffs.map(s => ({ 
+    // 除外リストに含まれるスタッフをフィルタリング
+    const filteredStaffs = staffs.filter(s => !EXCLUDED_EMAILS.includes(s.email));
+
+    console.log('全社員サマリー - 取得したスタッフ数:', filteredStaffs.length);
+    console.log('全社員サマリー - スタッフ詳細:', filteredStaffs.map(s => ({ 
       name: s.name, 
       email: s.email, 
       is_active: s.is_active 
     })));
     
     // 非アクティブなスタッフが含まれていないか確認
-    const inactiveStaffs = staffs.filter(s => !s.is_active);
+    const inactiveStaffs = filteredStaffs.filter(s => !s.is_active);
     if (inactiveStaffs.length > 0) {
       console.warn('⚠️ 非アクティブなスタッフが含まれています:', inactiveStaffs);
     }
 
     // 各スタッフの勤怠サマリーを取得
     const summaries = await Promise.all(
-      staffs.map(async (staff) => {
+      filteredStaffs.map(async (staff) => {
         let query = supabase
           .from('attendance_records')
           .select('*')
