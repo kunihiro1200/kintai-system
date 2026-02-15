@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
     
     // 認証チェック
     const staff = await getCurrentStaff();
+    console.log('[休暇API] スタッフ情報:', { id: staff.id, email: staff.email });
 
     // リクエストボディから休暇タイプ、日付、半休時間帯を取得
     const body = await request.json();
@@ -20,6 +21,8 @@ export async function POST(request: NextRequest) {
       date?: string;
       halfLeavePeriod?: HalfLeavePeriod;
     };
+    
+    console.log('[休暇API] リクエストボディ:', { leaveType, date, halfLeavePeriod });
 
     if (!leaveType || leaveType === 'normal') {
       return NextResponse.json(
@@ -122,6 +125,12 @@ export async function POST(request: NextRequest) {
             break;
           case 'holiday_work':
             eventTitle = '[勤怠] 休日出勤';
+            break;
+          case 'new_employee_leave':
+            eventTitle = '[勤怠] 休暇（6ヶ月以内社員）';
+            break;
+          case 'compensatory_leave':
+            eventTitle = '[勤怠] 代休';
             break;
           default:
             eventTitle = '[勤怠] 休暇';
