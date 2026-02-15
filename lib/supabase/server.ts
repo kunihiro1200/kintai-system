@@ -8,11 +8,22 @@ export async function createClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+  // 環境変数のチェック（より詳細なログ）
   if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('[Supabase] 環境変数チェック失敗:', {
+      url: supabaseUrl ? '設定済み' : '未設定',
+      key: supabaseAnonKey ? '設定済み' : '未設定',
+      env: process.env.NODE_ENV,
+    });
     throw new Error(
       `Supabase環境変数が設定されていません。URL: ${supabaseUrl ? '設定済み' : '未設定'}, Key: ${supabaseAnonKey ? '設定済み' : '未設定'}`
     );
   }
+
+  console.log('[Supabase] クライアント作成:', {
+    url: supabaseUrl.substring(0, 20) + '...',
+    env: process.env.NODE_ENV,
+  });
 
   return createServerClient(
     supabaseUrl,
