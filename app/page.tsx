@@ -148,28 +148,61 @@ export default function Home() {
     setMessage(null);
     setShowLeaveModal(false);
 
+    const requestUrl = '/api/attendance/leave';
+    const requestBody = { 
+      leaveType: selectedLeaveType,
+      date,
+      halfLeavePeriod,
+    };
+
+    // デバッグログ: リクエスト情報を出力
+    console.log('[休暇記録] リクエスト開始:', {
+      url: requestUrl,
+      method: 'POST',
+      body: requestBody,
+      leaveLabel: selectedLeaveLabel,
+    });
+
     try {
-      const response = await fetch('/api/attendance/leave', {
+      const response = await fetch(requestUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          leaveType: selectedLeaveType,
-          date,
-          halfLeavePeriod,
-        }),
+        body: JSON.stringify(requestBody),
       });
+
+      // デバッグログ: レスポンス情報を出力
+      console.log('[休暇記録] レスポンス受信:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        url: response.url,
+      });
+
       const data = await response.json();
 
       if (data.success) {
+        console.log('[休暇記録] 成功:', data);
         setMessage({ type: 'success', text: `${selectedLeaveLabel}を記録しました` });
         await fetchStatus();
         await fetchLeaveSummary();
       } else {
+        console.error('[休暇記録] エラー:', {
+          error: data.error,
+          requestUrl,
+          requestBody,
+          responseStatus: response.status,
+        });
         setMessage({ type: 'error', text: data.error?.message || `${selectedLeaveLabel}の記録に失敗しました` });
       }
     } catch (error) {
+      console.error('[休暇記録] 例外発生:', {
+        error,
+        requestUrl,
+        requestBody,
+        leaveLabel: selectedLeaveLabel,
+      });
       setMessage({ type: 'error', text: `${selectedLeaveLabel}の記録に失敗しました` });
     } finally {
       setLoading(false);
