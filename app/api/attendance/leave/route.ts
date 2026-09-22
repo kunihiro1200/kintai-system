@@ -16,13 +16,14 @@ export async function POST(request: NextRequest) {
 
     // リクエストボディから休暇タイプ、日付、半休時間帯を取得
     const body = await request.json();
-    const { leaveType, date, halfLeavePeriod } = body as { 
+    const { leaveType, date, halfLeavePeriod, compensatoryLeaveDate } = body as { 
       leaveType: LeaveType; 
       date?: string;
       halfLeavePeriod?: HalfLeavePeriod;
+      compensatoryLeaveDate?: string;
     };
     
-    console.log('[休暇API] リクエストボディ:', { leaveType, date, halfLeavePeriod });
+    console.log('[休暇API] リクエストボディ:', { leaveType, date, halfLeavePeriod, compensatoryLeaveDate });
 
     if (!leaveType || leaveType === 'normal') {
       return NextResponse.json(
@@ -82,6 +83,8 @@ export async function POST(request: NextRequest) {
           date: targetDate,
           leave_type: leaveType,
           half_leave_period: leaveType === 'half_leave' ? halfLeavePeriod : null,
+          compensatory_leave_date:
+            leaveType === 'compensatory_leave' ? (compensatoryLeaveDate || null) : null,
           clock_in: null,
           clock_out: null,
           work_hours: null,
@@ -130,7 +133,12 @@ export async function POST(request: NextRequest) {
             eventTitle = '[勤怠] 休暇（6ヶ月以内社員）';
             break;
           case 'compensatory_leave':
-            eventTitle = '[勤怠] 代休';
+            if (compensatoryLeaveDate) {
+              const d = new Date(compensatoryLeaveDate);
+              eventTitle = `[勤怠] 代休（${d.getMonth() + 1}/${d.getDate()}の休日出勤分）`;
+            } else {
+              eventTitle = '[勤怠] 代休';
+            }
             break;
           default:
             eventTitle = '[勤怠] 休暇';

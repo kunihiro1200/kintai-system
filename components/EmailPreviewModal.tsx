@@ -14,8 +14,11 @@ interface StaffSummary {
   confirmed_overtime: number;
   paid_leave_count: number;
   paid_leave_dates: string[];
+  half_leave_dates?: { date: string; period: string | null }[];
   compensatory_leave_count: number;
+  compensatory_leave_dates?: { date: string; source_date: string | null }[];
   holiday_work_count: number;
+  holiday_work_dates?: string[];
   new_employee_leave_count: number;
 }
 
@@ -165,6 +168,7 @@ export function EmailPreviewModal({
                   <th style={{ padding: '12px', textAlign: 'left' }}>総残業時間</th>
                   <th style={{ padding: '12px', textAlign: 'left' }}>確定残業時間</th>
                   <th style={{ padding: '12px', textAlign: 'left' }}>有給休暇</th>
+                  <th style={{ padding: '12px', textAlign: 'left' }}>半休</th>
                   <th style={{ padding: '12px', textAlign: 'left' }}>代休</th>
                   <th style={{ padding: '12px', textAlign: 'left' }}>休日出勤</th>
                 </tr>
@@ -204,8 +208,51 @@ export function EmailPreviewModal({
                         </div>
                       )}
                     </td>
-                    <td style={{ padding: '10px' }}>{summary.compensatory_leave_count}日</td>
-                    <td style={{ padding: '10px' }}>{summary.holiday_work_count}日</td>
+                    <td style={{ padding: '10px' }}>
+                      {summary.half_leave_dates && summary.half_leave_dates.length > 0 ? (
+                        <>
+                          {summary.half_leave_dates.length}回
+                          <div style={{ fontSize: '0.85em', color: '#7f8c8d', marginTop: '5px' }}>
+                            {summary.half_leave_dates.map((item) => {
+                              const d = new Date(item.date);
+                              const md = `${d.getMonth() + 1}/${d.getDate()}`;
+                              const periodLabel =
+                                item.period === 'morning' ? '午前' : item.period === 'afternoon' ? '午後' : '';
+                              return periodLabel ? `${md}（${periodLabel}）` : md;
+                            }).join('、')}
+                          </div>
+                        </>
+                      ) : (
+                        '-'
+                      )}
+                    </td>
+                    <td style={{ padding: '10px' }}>
+                      {summary.compensatory_leave_count}日
+                      {summary.compensatory_leave_dates && summary.compensatory_leave_dates.length > 0 && (
+                        <div style={{ fontSize: '0.85em', color: '#7f8c8d', marginTop: '5px' }}>
+                          {summary.compensatory_leave_dates.map((item) => {
+                            const d = new Date(item.date);
+                            const md = `${d.getMonth() + 1}/${d.getDate()}`;
+                            if (item.source_date) {
+                              const s = new Date(item.source_date);
+                              return `${md}（${s.getMonth() + 1}/${s.getDate()}の休日出勤分）`;
+                            }
+                            return md;
+                          }).join('、')}
+                        </div>
+                      )}
+                    </td>
+                    <td style={{ padding: '10px' }}>
+                      {summary.holiday_work_count}日
+                      {summary.holiday_work_dates && summary.holiday_work_dates.length > 0 && (
+                        <div style={{ fontSize: '0.85em', color: '#7f8c8d', marginTop: '5px' }}>
+                          {summary.holiday_work_dates.map((date) => {
+                            const d = new Date(date);
+                            return `${d.getMonth() + 1}/${d.getDate()}`;
+                          }).join('、')}
+                        </div>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

@@ -7,7 +7,11 @@ interface LeaveModalProps {
   leaveType: LeaveType;
   leaveLabel: string;
   onClose: () => void;
-  onSave: (date: string, halfLeavePeriod?: HalfLeavePeriod) => void;
+  onSave: (
+    date: string,
+    halfLeavePeriod?: HalfLeavePeriod,
+    compensatoryLeaveDate?: string
+  ) => void;
 }
 
 export function LeaveModal({
@@ -19,10 +23,13 @@ export function LeaveModal({
   const today = new Date().toISOString().split('T')[0];
   const [date, setDate] = useState(today);
   const [halfLeavePeriod, setHalfLeavePeriod] = useState<HalfLeavePeriod>('morning');
+  const [compensatoryLeaveDate, setCompensatoryLeaveDate] = useState('');
 
   const handleSave = () => {
     if (leaveType === 'half_leave') {
       onSave(date, halfLeavePeriod);
+    } else if (leaveType === 'compensatory_leave') {
+      onSave(date, undefined, compensatoryLeaveDate || undefined);
     } else {
       onSave(date);
     }
@@ -161,6 +168,35 @@ export function LeaveModal({
                 />
                 午後半休
               </label>
+            </div>
+          </div>
+        )}
+
+        {leaveType === 'compensatory_leave' && (
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label
+              style={{
+                display: 'block',
+                marginBottom: '0.5rem',
+                fontWeight: '500',
+              }}
+            >
+              対象の休日出勤日（いつの代休か）
+            </label>
+            <input
+              type="date"
+              value={compensatoryLeaveDate}
+              onChange={(e) => setCompensatoryLeaveDate(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '0.5rem',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                fontSize: '1rem',
+              }}
+            />
+            <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#888' }}>
+              この代休がどの休日出勤の振り替えかを選択してください（任意）。
             </div>
           </div>
         )}

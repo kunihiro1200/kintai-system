@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     // 日付一覧を取得
     let query = supabase
       .from('attendance_records')
-      .select('date, half_leave_period, leave_type')
+      .select('date, half_leave_period, leave_type, compensatory_leave_date')
       .eq('staff_id', staffId)
       .order('date', { ascending: false });
 

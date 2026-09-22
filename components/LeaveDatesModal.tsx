@@ -17,6 +17,7 @@ interface LeaveDate {
   date: string;
   half_leave_period?: string;
   leave_type?: string;
+  compensatory_leave_date?: string;
 }
 
 export function LeaveDatesModal({
@@ -150,6 +151,20 @@ export function LeaveDatesModal({
                       }}
                     >
                       {item.half_leave_period === 'morning' ? '午前半休' : '午後半休'}
+                    </span>
+                  )}
+                  {item.leave_type === 'compensatory_leave' && item.compensatory_leave_date && (
+                    <span
+                      style={{
+                        padding: '0.25rem 0.75rem',
+                        fontSize: '0.85rem',
+                        backgroundColor: '#e2e3e5',
+                        color: '#383d41',
+                        borderRadius: '12px',
+                        fontWeight: '500',
+                      }}
+                    >
+                      {formatDateJapanese(item.compensatory_leave_date)}の休日出勤分
                     </span>
                   )}
                 </div>

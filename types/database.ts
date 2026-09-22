@@ -38,6 +38,7 @@ export interface AttendanceRecord {
   overtime?: number;
   leave_type: LeaveType;
   half_leave_period?: HalfLeavePeriod; // 半休の時間帯
+  compensatory_leave_date?: string; // 代休の対象となる休日出勤日 (YYYY-MM-DD)
   created_at: Date;
   updated_at: Date;
 }

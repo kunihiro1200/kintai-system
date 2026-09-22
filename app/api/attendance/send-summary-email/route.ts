@@ -232,6 +232,9 @@ function generateEmailBody(startDate: string, endDate: string, summaries: any[],
         <th>総残業時間</th>
         <th>確定残業時間</th>
         <th>有給休暇</th>
+        <th>半休</th>
+        <th>代休</th>
+        <th>休日出勤</th>
       </tr>
     </thead>
     <tbody>
@@ -242,16 +245,55 @@ function generateEmailBody(startDate: string, endDate: string, summaries: any[],
       ? '<span class="holiday-staff">✓ 祝日対応</span>' 
       : '祝日対応なし';
 
+    // 日付を M/D 形式に整形するヘルパー
+    const formatMD = (date: string) => {
+      const d = new Date(date);
+      return `${d.getMonth() + 1}/${d.getDate()}`;
+    };
+
     // 有給休暇の日付をフォーマット
     let paidLeaveDisplay = `${summary.paid_leave_count}日`;
     if (summary.paid_leave_dates && summary.paid_leave_dates.length > 0) {
       const formattedDates = summary.paid_leave_dates
-        .map((date: string) => {
-          const d = new Date(date);
-          return `${d.getMonth() + 1}/${d.getDate()}`;
-        })
+        .map((date: string) => formatMD(date))
         .join('、');
       paidLeaveDisplay += `<div class="leave-dates">${formattedDates}</div>`;
+    }
+
+    // 半休の日付をフォーマット（いつの半休か・午前/午後）
+    let halfLeaveDisplay = '-';
+    if (summary.half_leave_dates && summary.half_leave_dates.length > 0) {
+      halfLeaveDisplay = `${summary.half_leave_dates.length}回`;
+      const formattedHalf = summary.half_leave_dates
+        .map((item: { date: string; period: string | null }) => {
+          const periodLabel =
+            item.period === 'morning' ? '午前' : item.period === 'afternoon' ? '午後' : '';
+          return periodLabel ? `${formatMD(item.date)}（${periodLabel}）` : formatMD(item.date);
+        })
+        .join('、');
+      halfLeaveDisplay += `<div class="leave-dates">${formattedHalf}</div>`;
+    }
+
+    // 代休の日付をフォーマット（いつの代休か・元の休日出勤日）
+    let compensatoryLeaveDisplay = `${summary.compensatory_leave_count}日`;
+    if (summary.compensatory_leave_dates && summary.compensatory_leave_dates.length > 0) {
+      const formattedComp = summary.compensatory_leave_dates
+        .map((item: { date: string; source_date: string | null }) => {
+          return item.source_date
+            ? `${formatMD(item.date)}（${formatMD(item.source_date)}の休日出勤分）`
+            : formatMD(item.date);
+        })
+        .join('、');
+      compensatoryLeaveDisplay += `<div class="leave-dates">${formattedComp}</div>`;
+    }
+
+    // 休日出勤の日付をフォーマット
+    let holidayWorkDisplay = `${summary.holiday_work_count}日`;
+    if (summary.holiday_work_dates && summary.holiday_work_dates.length > 0) {
+      const formattedHW = summary.holiday_work_dates
+        .map((date: string) => formatMD(date))
+        .join('、');
+      holidayWorkDisplay += `<div class="leave-dates">${formattedHW}</div>`;
     }
 
     html += `
@@ -262,6 +304,9 @@ function generateEmailBody(startDate: string, endDate: string, summaries: any[],
         <td>${summary.total_overtime.toFixed(1)}時間</td>
         <td>${summary.confirmed_overtime.toFixed(1)}時間</td>
         <td>${paidLeaveDisplay}</td>
+        <td>${halfLeaveDisplay}</td>
+        <td>${compensatoryLeaveDisplay}</td>
+        <td>${holidayWorkDisplay}</td>
       </tr>
     `;
   });

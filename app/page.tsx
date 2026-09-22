@@ -141,7 +141,11 @@ export default function Home() {
   };
 
   // 休暇記録処理
-  const handleLeave = async (date: string, halfLeavePeriod?: HalfLeavePeriod) => {
+  const handleLeave = async (
+    date: string,
+    halfLeavePeriod?: HalfLeavePeriod,
+    compensatoryLeaveDate?: string
+  ) => {
     if (!selectedLeaveType) return;
 
     setLoading(true);
@@ -153,6 +157,7 @@ export default function Home() {
       leaveType: selectedLeaveType,
       date,
       halfLeavePeriod,
+      compensatoryLeaveDate,
     };
 
     // デバッグログ: リクエスト情報を出力

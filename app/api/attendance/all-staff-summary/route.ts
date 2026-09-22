@@ -120,6 +120,9 @@ export async function GET(request: NextRequest) {
         let newEmployeeLeaveCount = 0;
         let workDays = 0;
         const paidLeaveDates: string[] = [];
+        const halfLeaveDates: { date: string; period: string | null }[] = [];
+        const compensatoryLeaveDates: { date: string; source_date: string | null }[] = [];
+        const holidayWorkDates: string[] = [];
 
         records?.forEach((record) => {
           if (record.work_hours) {
@@ -143,6 +146,7 @@ export async function GET(request: NextRequest) {
             case 'half_leave':
               paidLeaveCount += 0.5;
               paidLeaveDates.push(record.date);
+              halfLeaveDates.push({ date: record.date, period: record.half_leave_period ?? null });
               // 角井さんのデバッグ
               if (isKakui) {
                 console.log('半休を検出:', record.date, record.leave_type);
@@ -150,9 +154,14 @@ export async function GET(request: NextRequest) {
               break;
             case 'compensatory_leave':
               compensatoryLeaveCount += 1;
+              compensatoryLeaveDates.push({
+                date: record.date,
+                source_date: record.compensatory_leave_date ?? null,
+              });
               break;
             case 'holiday_work':
               holidayWorkCount += 1;
+              holidayWorkDates.push(record.date);
               break;
             case 'new_employee_leave':
               newEmployeeLeaveCount += 1;
@@ -188,8 +197,11 @@ export async function GET(request: NextRequest) {
           confirmed_overtime: Math.round(totalOvertime * 10) / 10, // 確定残業時間（閾値適用後）
           paid_leave_count: paidLeaveCount,
           paid_leave_dates: paidLeaveDates,
+          half_leave_dates: halfLeaveDates,
           compensatory_leave_count: compensatoryLeaveCount,
+          compensatory_leave_dates: compensatoryLeaveDates,
           holiday_work_count: holidayWorkCount,
+          holiday_work_dates: holidayWorkDates,
           new_employee_leave_count: newEmployeeLeaveCount,
         };
       })
