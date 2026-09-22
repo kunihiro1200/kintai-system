@@ -144,7 +144,8 @@ export default function Home() {
   const handleLeave = async (
     date: string,
     halfLeavePeriod?: HalfLeavePeriod,
-    compensatoryLeaveDate?: string
+    compensatoryLeaveDate?: string,
+    overrideLeaveType?: LeaveType
   ) => {
     if (!selectedLeaveType) return;
 
@@ -152,9 +153,12 @@ export default function Home() {
     setMessage(null);
     setShowLeaveModal(false);
 
+    // 有給休暇で半休を選んだ場合など、記録するタイプを上書きできる
+    const effectiveLeaveType = overrideLeaveType ?? selectedLeaveType;
+
     const requestUrl = '/api/attendance/leave';
     const requestBody = { 
-      leaveType: selectedLeaveType,
+      leaveType: effectiveLeaveType,
       date,
       halfLeavePeriod,
       compensatoryLeaveDate,

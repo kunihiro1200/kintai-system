@@ -10,9 +10,13 @@ interface LeaveModalProps {
   onSave: (
     date: string,
     halfLeavePeriod?: HalfLeavePeriod,
-    compensatoryLeaveDate?: string
+    compensatoryLeaveDate?: string,
+    overrideLeaveType?: LeaveType
   ) => void;
 }
+
+// 有給休暇の取得区分（1日 / 午前半休 / 午後半休）
+type PaidLeaveMode = 'full' | 'morning' | 'afternoon';
 
 export function LeaveModal({
   leaveType,
@@ -24,12 +28,20 @@ export function LeaveModal({
   const [date, setDate] = useState(today);
   const [halfLeavePeriod, setHalfLeavePeriod] = useState<HalfLeavePeriod>('morning');
   const [compensatoryLeaveDate, setCompensatoryLeaveDate] = useState('');
+  const [paidLeaveMode, setPaidLeaveMode] = useState<PaidLeaveMode>('full');
 
   const handleSave = () => {
     if (leaveType === 'half_leave') {
       onSave(date, halfLeavePeriod);
     } else if (leaveType === 'compensatory_leave') {
       onSave(date, undefined, compensatoryLeaveDate || undefined);
+    } else if (leaveType === 'paid_leave') {
+      // 有給休暇: 半休を選んだ場合は half_leave として記録する
+      if (paidLeaveMode === 'full') {
+        onSave(date);
+      } else {
+        onSave(date, paidLeaveMode, undefined, 'half_leave');
+      }
     } else {
       onSave(date);
     }
@@ -135,6 +147,55 @@ export function LeaveModal({
             }}
           />
         </div>
+
+        {leaveType === 'paid_leave' && (
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label
+              style={{
+                display: 'block',
+                marginBottom: '0.5rem',
+                fontWeight: '500',
+              }}
+            >
+              取得区分
+            </label>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  value="full"
+                  checked={paidLeaveMode === 'full'}
+                  onChange={(e) => setPaidLeaveMode(e.target.value as PaidLeaveMode)}
+                  style={{ marginRight: '0.5rem' }}
+                />
+                1日
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  value="morning"
+                  checked={paidLeaveMode === 'morning'}
+                  onChange={(e) => setPaidLeaveMode(e.target.value as PaidLeaveMode)}
+                  style={{ marginRight: '0.5rem' }}
+                />
+                午前半休
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  value="afternoon"
+                  checked={paidLeaveMode === 'afternoon'}
+                  onChange={(e) => setPaidLeaveMode(e.target.value as PaidLeaveMode)}
+                  style={{ marginRight: '0.5rem' }}
+                />
+                午後半休
+              </label>
+            </div>
+            <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#888' }}>
+              半休を選ぶと0.5日分の有給として記録されます。
+            </div>
+          </div>
+        )}
 
         {leaveType === 'half_leave' && (
           <div style={{ marginBottom: '1.5rem' }}>
