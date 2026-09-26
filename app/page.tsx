@@ -30,6 +30,8 @@ export default function Home() {
     paid_leave_count: 0,
     compensatory_leave_count: 0,
     holiday_work_count: 0,
+    holiday_work_consumed_count: 0,
+    holiday_work_remaining_count: 0,
     new_employee_leave_count: 0,
   });
   // サマリー項目クリック時に開く取得日一覧モーダルの状態
@@ -459,9 +461,14 @@ export default function Home() {
           {([
             { type: 'paid_leave', label: '有給休暇', count: leaveSummary.paid_leave_count },
             { type: 'compensatory_leave', label: '代休', count: leaveSummary.compensatory_leave_count },
-            { type: 'holiday_work', label: '休日出勤', count: leaveSummary.holiday_work_count },
+            {
+              type: 'holiday_work',
+              label: '休日出勤',
+              count: leaveSummary.holiday_work_count,
+              note: `うち代休消化 ${leaveSummary.holiday_work_consumed_count ?? 0}日 / 未消化 ${leaveSummary.holiday_work_remaining_count ?? 0}日`,
+            },
             { type: 'new_employee_leave', label: '休暇（6ヶ月以内社員）', count: leaveSummary.new_employee_leave_count },
-          ] as { type: SummaryLeaveType; label: string; count: number }[]).map((item) => (
+          ] as { type: SummaryLeaveType; label: string; count: number; note?: string }[]).map((item) => (
             <button
               key={item.type}
               type="button"
@@ -482,8 +489,15 @@ export default function Home() {
                 color: '#555',
               }}
             >
-              <span><strong>{item.label}:</strong> {item.count}日</span>
-              <span style={{ color: '#007bff', fontSize: '0.8rem' }}>取得日を見る ›</span>
+              <span>
+                <strong>{item.label}:</strong> {item.count}日
+                {item.note && (
+                  <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', color: '#888' }}>
+                    （{item.note}）
+                  </span>
+                )}
+              </span>
+              <span style={{ color: '#007bff', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>取得日を見る ›</span>
             </button>
           ))}
         </div>

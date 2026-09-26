@@ -1,7 +1,8 @@
 // 休暇記録モーダルコンポーネント
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LeaveType, HalfLeavePeriod } from '@/types/database';
+import { formatDateJapanese } from '@/lib/utils/date';
 
 interface LeaveModalProps {
   leaveType: LeaveType;
@@ -29,12 +30,44 @@ export function LeaveModal({
   const [halfLeavePeriod, setHalfLeavePeriod] = useState<HalfLeavePeriod>('morning');
   const [compensatoryLeaveDate, setCompensatoryLeaveDate] = useState('');
   const [paidLeaveMode, setPaidLeaveMode] = useState<PaidLeaveMode>('full');
+  // 代休で選択できる未消化の休日出勤日
+  const [availableHolidayWorkDates, setAvailableHolidayWorkDates] = useState<string[]>([]);
+  const [loadingHolidayWork, setLoadingHolidayWork] = useState(false);
+
+  // 代休の場合は、相殺できる未消化の休日出勤日を取得する
+  useEffect(() => {
+    if (leaveType !== 'compensatory_leave') return;
+
+    const fetchAvailable = async () => {
+      setLoadingHolidayWork(true);
+      try {
+        const response = await fetch('/api/attendance/available-holiday-work');
+        const data = await response.json();
+        if (data.success) {
+          setAvailableHolidayWorkDates(data.data.dates ?? []);
+        } else {
+          setAvailableHolidayWorkDates([]);
+        }
+      } catch {
+        setAvailableHolidayWorkDates([]);
+      } finally {
+        setLoadingHolidayWork(false);
+      }
+    };
+
+    fetchAvailable();
+  }, [leaveType]);
 
   const handleSave = () => {
     if (leaveType === 'half_leave') {
       onSave(date, halfLeavePeriod);
     } else if (leaveType === 'compensatory_leave') {
-      onSave(date, undefined, compensatoryLeaveDate || undefined);
+      // 代休は必ず休日出勤と相殺するため、対象日の選択を必須にする
+      if (!compensatoryLeaveDate) {
+        alert('代休は対象の休日出勤日を選択してください。');
+        return;
+      }
+      onSave(date, undefined, compensatoryLeaveDate);
     } else if (leaveType === 'paid_leave') {
       // 有給休暇: 半休を選んだ場合は half_leave として記録する
       if (paidLeaveMode === 'full') {
@@ -242,23 +275,51 @@ export function LeaveModal({
                 fontWeight: '500',
               }}
             >
-              対象の休日出勤日（いつの代休か）
+              対象の休日出勤日（いつの代休か）<span style={{ color: '#dc3545' }}>*</span>
             </label>
-            <input
-              type="date"
-              value={compensatoryLeaveDate}
-              onChange={(e) => setCompensatoryLeaveDate(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.5rem',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                fontSize: '1rem',
-              }}
-            />
-            <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#888' }}>
-              この代休がどの休日出勤の振り替えかを選択してください（任意）。
-            </div>
+            {loadingHolidayWork ? (
+              <div style={{ fontSize: '0.9rem', color: '#888', padding: '0.5rem 0' }}>
+                読み込み中...
+              </div>
+            ) : availableHolidayWorkDates.length === 0 ? (
+              <div
+                style={{
+                  padding: '0.75rem',
+                  backgroundColor: '#f8d7da',
+                  border: '1px solid #f5c6cb',
+                  borderRadius: '4px',
+                  color: '#721c24',
+                  fontSize: '0.85rem',
+                }}
+              >
+                相殺できる未消化の休日出勤がありません。代休は休日出勤と1対1で相殺するため、先に休日出勤を記録してください。
+              </div>
+            ) : (
+              <>
+                <select
+                  value={compensatoryLeaveDate}
+                  onChange={(e) => setCompensatoryLeaveDate(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    fontSize: '1rem',
+                    backgroundColor: '#fff',
+                  }}
+                >
+                  <option value="">選択してください</option>
+                  {availableHolidayWorkDates.map((d, index) => (
+                    <option key={`${d}-${index}`} value={d}>
+                      {formatDateJapanese(d)}の休日出勤
+                    </option>
+                  ))}
+                </select>
+                <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#888' }}>
+                  代休は休日出勤と必ず1対1で相殺されます。相殺できる休日出勤: {availableHolidayWorkDates.length}日分
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -277,20 +338,29 @@ export function LeaveModal({
           >
             キャンセル
           </button>
-          <button
-            onClick={handleSave}
-            style={{
-              flex: 1,
-              padding: '0.75rem',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-            }}
-          >
-            保存
-          </button>
+          {(() => {
+            // 代休は未消化の休日出勤が無い場合、保存できない
+            const disableSave =
+              leaveType === 'compensatory_leave' &&
+              (loadingHolidayWork || availableHolidayWorkDates.length === 0);
+            return (
+              <button
+                onClick={handleSave}
+                disabled={disableSave}
+                style={{
+                  flex: 1,
+                  padding: '0.75rem',
+                  backgroundColor: disableSave ? '#adb5bd' : '#007bff',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: disableSave ? 'not-allowed' : 'pointer',
+                }}
+              >
+                保存
+              </button>
+            );
+          })()}
         </div>
       </div>
     </div>

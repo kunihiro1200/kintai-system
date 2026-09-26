@@ -40,6 +40,70 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 代休の場合：対象の休日出勤日が必須で、休日出勤と1対1で相殺する
+    if (leaveType === 'compensatory_leave') {
+      if (!compensatoryLeaveDate) {
+        return NextResponse.json(
+          { success: false, error: { message: '代休は対象の休日出勤日を選択してください' } },
+          { status: 400 }
+        );
+      }
+
+      // 対象日に自分の休日出勤記録があるか確認
+      const { data: holidayWorkRecords, error: hwError } = await supabase
+        .from('attendance_records')
+        .select('id')
+        .eq('staff_id', staff.id)
+        .eq('leave_type', 'holiday_work')
+        .eq('date', compensatoryLeaveDate);
+
+      if (hwError) {
+        console.error('休日出勤確認エラー:', hwError);
+        return NextResponse.json(
+          { success: false, error: { message: '休日出勤の確認に失敗しました' } },
+          { status: 500 }
+        );
+      }
+
+      const holidayWorkTotal = holidayWorkRecords?.length ?? 0;
+      if (holidayWorkTotal === 0) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: { message: '選択した日に休日出勤の記録がありません。代休は休日出勤と相殺する必要があります。' },
+          },
+          { status: 400 }
+        );
+      }
+
+      // その休日出勤日が既に代休で消化されていないか確認（1対1相殺）
+      const { data: usedRecords, error: usedError } = await supabase
+        .from('attendance_records')
+        .select('id')
+        .eq('staff_id', staff.id)
+        .eq('leave_type', 'compensatory_leave')
+        .eq('compensatory_leave_date', compensatoryLeaveDate);
+
+      if (usedError) {
+        console.error('代休消化状況確認エラー:', usedError);
+        return NextResponse.json(
+          { success: false, error: { message: '代休の消化状況の確認に失敗しました' } },
+          { status: 500 }
+        );
+      }
+
+      const usedTotal = usedRecords?.length ?? 0;
+      if (usedTotal >= holidayWorkTotal) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: { message: 'この休日出勤日は既に代休で消化済みです。別の未消化の休日出勤日を選択してください。' },
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     // 日付が指定されていない場合は今日
     const targetDate = date || new Date().toISOString().split('T')[0];
 
