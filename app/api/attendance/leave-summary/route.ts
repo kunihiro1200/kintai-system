@@ -58,9 +58,13 @@ export async function GET(request: NextRequest) {
       }
     });
 
+    // 休日出勤は「代休の相殺」と「6ヶ月以内社員休暇の埋め合わせ」の両方で消費される。
+    // 6ヶ月以内社員休暇は取得したら休日出勤で埋める必要があるため、休日出勤を1日ずつ消費する。
+    const holidayWorkConsumedTotal = holidayWorkConsumedCount + newEmployeeLeaveCount;
+
     // 休日出勤の残数（未消化）。消化数が休日出勤数を超えないよう下限0でクランプ
     const holidayWorkRemainingCount = Math.max(
-      holidayWorkCount - holidayWorkConsumedCount,
+      holidayWorkCount - holidayWorkConsumedTotal,
       0
     );
 
@@ -71,7 +75,11 @@ export async function GET(request: NextRequest) {
         paid_leave_count: paidLeaveCount,
         compensatory_leave_count: compensatoryLeaveCount,
         holiday_work_count: holidayWorkCount,
+        // 代休による消化分
         holiday_work_consumed_count: holidayWorkConsumedCount,
+        // 6ヶ月以内社員休暇による消化分
+        holiday_work_used_by_new_employee_leave_count: newEmployeeLeaveCount,
+        // 未消化（代休・6ヶ月以内社員休暇のどちらにもまだ使われていない）
         holiday_work_remaining_count: holidayWorkRemainingCount,
         new_employee_leave_count: newEmployeeLeaveCount,
       },

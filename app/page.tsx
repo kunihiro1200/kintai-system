@@ -31,6 +31,7 @@ export default function Home() {
     compensatory_leave_count: 0,
     holiday_work_count: 0,
     holiday_work_consumed_count: 0,
+    holiday_work_used_by_new_employee_leave_count: 0,
     holiday_work_remaining_count: 0,
     new_employee_leave_count: 0,
   });
@@ -465,7 +466,7 @@ export default function Home() {
               type: 'holiday_work',
               label: '休日出勤',
               count: leaveSummary.holiday_work_count,
-              note: `うち代休消化 ${leaveSummary.holiday_work_consumed_count ?? 0}日 / 未消化 ${leaveSummary.holiday_work_remaining_count ?? 0}日`,
+              note: `代休消化 ${leaveSummary.holiday_work_consumed_count ?? 0}日 / 6ヶ月以内社員休暇 ${leaveSummary.holiday_work_used_by_new_employee_leave_count ?? 0}日 / 未消化 ${leaveSummary.holiday_work_remaining_count ?? 0}日`,
             },
             { type: 'new_employee_leave', label: '休暇（6ヶ月以内社員）', count: leaveSummary.new_employee_leave_count },
           ] as { type: SummaryLeaveType; label: string; count: number; note?: string }[]).map((item) => (

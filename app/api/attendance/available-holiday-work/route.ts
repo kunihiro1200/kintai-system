@@ -44,6 +44,22 @@ export async function GET() {
       );
     }
 
+    // 6ヶ月以内社員休暇の件数を取得。この休暇は休日出勤で埋める必要があるため、
+    // その件数分だけ休日出勤が消費される（特定の日には紐づかないので件数として差し引く）。
+    const { count: newEmployeeLeaveCount, error: nelError } = await supabase
+      .from('attendance_records')
+      .select('id', { count: 'exact', head: true })
+      .eq('staff_id', staff.id)
+      .eq('leave_type', 'new_employee_leave');
+
+    if (nelError) {
+      console.error('6ヶ月以内社員休暇取得エラー:', nelError);
+      return NextResponse.json(
+        { success: false, error: { message: '6ヶ月以内社員休暇の取得に失敗しました' } },
+        { status: 500 }
+      );
+    }
+
     // 消化済みの日付をカウント（同じ日を複数回相殺できないよう1対1で管理）
     const usedCount = new Map<string, number>();
     (compensatoryRecords ?? []).forEach((rec) => {
@@ -60,8 +76,8 @@ export async function GET() {
       holidayWorkCount.set(d, (holidayWorkCount.get(d) ?? 0) + 1);
     });
 
-    const availableDates: string[] = [];
-    // 日付降順を維持するため holidayWorkRecords の順序で走査
+    let availableDates: string[] = [];
+    // 日付降順（新しい順）を維持するため holidayWorkRecords の順序で走査
     const seen = new Set<string>();
     (holidayWorkRecords ?? []).forEach((rec) => {
       const d = rec.date as string;
@@ -74,6 +90,13 @@ export async function GET() {
         availableDates.push(d);
       }
     });
+
+    // 6ヶ月以内社員休暇の件数分は休日出勤で埋め済みとみなし、古い休日出勤から除外する。
+    // availableDates は新しい順なので、末尾（古い方）から件数分を取り除く。
+    const nelCount = newEmployeeLeaveCount ?? 0;
+    if (nelCount > 0) {
+      availableDates = availableDates.slice(0, Math.max(availableDates.length - nelCount, 0));
+    }
 
     return NextResponse.json({
       success: true,

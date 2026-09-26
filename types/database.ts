@@ -49,7 +49,8 @@ export interface LeaveSummary {
   compensatory_leave_count: number; // 代休日数
   holiday_work_count: number;    // 休日出勤日数
   holiday_work_consumed_count?: number;  // 代休で相殺（消化）済みの休日出勤日数
-  holiday_work_remaining_count?: number; // 未消化（相殺可能）の休日出勤日数
+  holiday_work_used_by_new_employee_leave_count?: number; // 6ヶ月以内社員休暇の埋め合わせで消化した休日出勤日数
+  holiday_work_remaining_count?: number; // 未消化（代休・6ヶ月以内社員休暇のどちらにも未使用）の休日出勤日数
   new_employee_leave_count: number; // 6ヶ月以内社員休暇日数
 }
 
