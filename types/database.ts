@@ -44,6 +44,7 @@ export interface AttendanceRecord {
 }
 
 export interface LeaveSummary {
+  staff_id?: string;             // 本人のスタッフID（取得日一覧の照会に使用）
   paid_leave_count: number;      // 有給休暇日数
   compensatory_leave_count: number; // 代休日数
   holiday_work_count: number;    // 休日出勤日数

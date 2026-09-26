@@ -5,10 +5,14 @@ import { StatusDisplay } from '@/components/StatusDisplay';
 import { AttendanceButton } from '@/components/AttendanceButton';
 import { EditTimeModal } from '@/components/EditTimeModal';
 import { LeaveModal } from '@/components/LeaveModal';
+import { LeaveDatesModal } from '@/components/LeaveDatesModal';
 import { GoogleCalendarConnect } from '@/components/GoogleCalendarConnect';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { LeaveType, LeaveSummary, HalfLeavePeriod } from '@/types/database';
+
+// サマリーから取得日一覧を照会できる休暇タイプ
+type SummaryLeaveType = 'paid_leave' | 'compensatory_leave' | 'holiday_work' | 'new_employee_leave';
 
 export default function Home() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -28,6 +32,11 @@ export default function Home() {
     holiday_work_count: 0,
     new_employee_leave_count: 0,
   });
+  // サマリー項目クリック時に開く取得日一覧モーダルの状態
+  const [datesModalState, setDatesModalState] = useState<{
+    leaveType: SummaryLeaveType;
+    leaveLabel: string;
+  } | null>(null);
 
   // 現在のステータスを取得
   const fetchStatus = async () => {
@@ -443,19 +452,40 @@ export default function Home() {
         }}
       >
         <h3 style={{ marginBottom: '0.75rem', fontSize: '1rem' }}>休暇・休日出勤サマリー</h3>
+        <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.8rem', color: '#888' }}>
+          各項目をクリックすると取得日の一覧が表示されます
+        </p>
         <div style={{ fontSize: '0.9rem', color: '#555' }}>
-          <div style={{ marginBottom: '0.5rem' }}>
-            <strong>有給休暇:</strong> {leaveSummary.paid_leave_count}日
-          </div>
-          <div style={{ marginBottom: '0.5rem' }}>
-            <strong>代休:</strong> {leaveSummary.compensatory_leave_count}日
-          </div>
-          <div style={{ marginBottom: '0.5rem' }}>
-            <strong>休日出勤:</strong> {leaveSummary.holiday_work_count}日
-          </div>
-          <div>
-            <strong>休暇（6ヶ月以内社員）:</strong> {leaveSummary.new_employee_leave_count}日
-          </div>
+          {([
+            { type: 'paid_leave', label: '有給休暇', count: leaveSummary.paid_leave_count },
+            { type: 'compensatory_leave', label: '代休', count: leaveSummary.compensatory_leave_count },
+            { type: 'holiday_work', label: '休日出勤', count: leaveSummary.holiday_work_count },
+            { type: 'new_employee_leave', label: '休暇（6ヶ月以内社員）', count: leaveSummary.new_employee_leave_count },
+          ] as { type: SummaryLeaveType; label: string; count: number }[]).map((item) => (
+            <button
+              key={item.type}
+              type="button"
+              onClick={() => setDatesModalState({ leaveType: item.type, leaveLabel: item.label })}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                width: '100%',
+                padding: '0.5rem 0.75rem',
+                marginBottom: '0.4rem',
+                backgroundColor: '#fff',
+                border: '1px solid #e0e0e0',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                textAlign: 'left',
+                fontSize: '0.9rem',
+                color: '#555',
+              }}
+            >
+              <span><strong>{item.label}:</strong> {item.count}日</span>
+              <span style={{ color: '#007bff', fontSize: '0.8rem' }}>取得日を見る ›</span>
+            </button>
+          ))}
         </div>
       </div>
 
@@ -528,6 +558,17 @@ export default function Home() {
             setSelectedLeaveLabel('');
           }}
           onSave={handleLeave}
+        />
+      )}
+
+      {/* サマリー項目クリック時の取得日一覧モーダル（本人の取得日を表示） */}
+      {datesModalState && leaveSummary.staff_id && (
+        <LeaveDatesModal
+          staffId={leaveSummary.staff_id}
+          staffName={user?.email ?? '自分'}
+          leaveType={datesModalState.leaveType}
+          leaveLabel={datesModalState.leaveLabel}
+          onClose={() => setDatesModalState(null)}
         />
       )}
 

@@ -55,6 +55,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
+        staff_id: staff.id,
         paid_leave_count: paidLeaveCount,
         compensatory_leave_count: compensatoryLeaveCount,
         holiday_work_count: holidayWorkCount,

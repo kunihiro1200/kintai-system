@@ -12,28 +12,35 @@ export async function GET(request: NextRequest) {
     
     // 認証チェック
     const staff = await getCurrentStaff();
-    
-    // 管理者チェック（データベースベース）
-    const adminCheck = await isAdmin(staff.email);
-    if (!adminCheck) {
-      return NextResponse.json(
-        { success: false, error: { message: 'アクセス権限がありません' } },
-        { status: 403 }
-      );
-    }
 
     // クエリパラメータから取得
     const searchParams = request.nextUrl.searchParams;
-    const staffId = searchParams.get('staffId');
+    const requestedStaffId = searchParams.get('staffId');
     const leaveType = searchParams.get('leaveType');
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
-    if (!staffId || !leaveType) {
+    if (!leaveType) {
       return NextResponse.json(
-        { success: false, error: { message: 'staffIdとleaveTypeは必須です' } },
+        { success: false, error: { message: 'leaveTypeは必須です' } },
         { status: 400 }
       );
+    }
+
+    // 対象スタッフを決定する。
+    // staffId が未指定、または本人の staffId の場合は本人のデータを閲覧できる。
+    // 本人以外の staffId を指定する場合のみ管理者権限が必要。
+    let staffId = requestedStaffId ?? staff.id;
+
+    if (requestedStaffId && requestedStaffId !== staff.id) {
+      const adminCheck = await isAdmin(staff.email);
+      if (!adminCheck) {
+        return NextResponse.json(
+          { success: false, error: { message: 'アクセス権限がありません' } },
+          { status: 403 }
+        );
+      }
+      staffId = requestedStaffId;
     }
 
     // 日付一覧を取得

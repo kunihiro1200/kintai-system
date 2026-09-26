@@ -117,7 +117,9 @@ export function LeaveDatesModal({
         ) : (
           <div style={{ marginBottom: '1.5rem' }}>
             <div style={{ marginBottom: '0.5rem', color: '#666', fontSize: '0.9rem' }}>
-              合計: {dates.length}日
+              {/* 半休は0.5日として合計する（半休2回で1日）。件数も併記する */}
+              合計: {dates.reduce((sum, d) => sum + (d.leave_type === 'half_leave' ? 0.5 : 1), 0)}日
+              （{dates.length}件）
             </div>
             <div
               style={{
