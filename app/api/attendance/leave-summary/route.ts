@@ -11,10 +11,10 @@ export async function GET(request: NextRequest) {
     // 認証チェック
     const staff = await getCurrentStaff();
 
-    // 全ての休暇記録を取得（代休の相殺集計のため compensatory_leave_date も取得）
+    // 全ての休暇記録を取得
     const { data: records, error } = await supabase
       .from('attendance_records')
-      .select('leave_type, compensatory_leave_date')
+      .select('leave_type')
       .eq('staff_id', staff.id)
       .neq('leave_type', 'normal');
 
@@ -44,10 +44,9 @@ export async function GET(request: NextRequest) {
           break;
         case 'compensatory_leave':
           compensatoryLeaveCount += 1;
-          // 対象の休日出勤日が紐づいている代休は「消化済み」としてカウント
-          if (record.compensatory_leave_date) {
-            holidayWorkConsumedCount += 1;
-          }
+          // 代休は必ず休日出勤と相殺されるため、対象日の有無に関わらず休日出勤を1日消化する
+          // （過去に対象日を紐づけずに記録された代休も消化済みとして数える）
+          holidayWorkConsumedCount += 1;
           break;
         case 'holiday_work':
           holidayWorkCount += 1;

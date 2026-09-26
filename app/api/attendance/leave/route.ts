@@ -50,23 +50,22 @@ export async function POST(request: NextRequest) {
       }
 
       // 対象日に自分の休日出勤記録があるか確認
-      const { data: holidayWorkRecords, error: hwError } = await supabase
+      const { count: holidayWorkOnDate, error: hwDateError } = await supabase
         .from('attendance_records')
-        .select('id')
+        .select('id', { count: 'exact', head: true })
         .eq('staff_id', staff.id)
         .eq('leave_type', 'holiday_work')
         .eq('date', compensatoryLeaveDate);
 
-      if (hwError) {
-        console.error('休日出勤確認エラー:', hwError);
+      if (hwDateError) {
+        console.error('休日出勤確認エラー:', hwDateError);
         return NextResponse.json(
           { success: false, error: { message: '休日出勤の確認に失敗しました' } },
           { status: 500 }
         );
       }
 
-      const holidayWorkTotal = holidayWorkRecords?.length ?? 0;
-      if (holidayWorkTotal === 0) {
+      if ((holidayWorkOnDate ?? 0) === 0) {
         return NextResponse.json(
           {
             success: false,
@@ -76,28 +75,38 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // その休日出勤日が既に代休で消化されていないか確認（1対1相殺）
-      const { data: usedRecords, error: usedError } = await supabase
-        .from('attendance_records')
-        .select('id')
-        .eq('staff_id', staff.id)
-        .eq('leave_type', 'compensatory_leave')
-        .eq('compensatory_leave_date', compensatoryLeaveDate);
+      // 全体の未消化残数を確認（休日出勤は代休と6ヶ月以内社員休暇の両方で消費される）。
+      // 未消化 = 休日出勤 − (既存の代休 + 6ヶ月以内社員休暇) が1件以上あるときのみ代休を取れる。
+      const [{ count: holidayWorkTotalCount }, { count: compUsedCount }, { count: nelUsedCount }] =
+        await Promise.all([
+          supabase
+            .from('attendance_records')
+            .select('id', { count: 'exact', head: true })
+            .eq('staff_id', staff.id)
+            .eq('leave_type', 'holiday_work'),
+          supabase
+            .from('attendance_records')
+            .select('id', { count: 'exact', head: true })
+            .eq('staff_id', staff.id)
+            .eq('leave_type', 'compensatory_leave'),
+          supabase
+            .from('attendance_records')
+            .select('id', { count: 'exact', head: true })
+            .eq('staff_id', staff.id)
+            .eq('leave_type', 'new_employee_leave'),
+        ]);
 
-      if (usedError) {
-        console.error('代休消化状況確認エラー:', usedError);
-        return NextResponse.json(
-          { success: false, error: { message: '代休の消化状況の確認に失敗しました' } },
-          { status: 500 }
-        );
-      }
+      const remaining =
+        (holidayWorkTotalCount ?? 0) - ((compUsedCount ?? 0) + (nelUsedCount ?? 0));
 
-      const usedTotal = usedRecords?.length ?? 0;
-      if (usedTotal >= holidayWorkTotal) {
+      if (remaining <= 0) {
         return NextResponse.json(
           {
             success: false,
-            error: { message: 'この休日出勤日は既に代休で消化済みです。別の未消化の休日出勤日を選択してください。' },
+            error: {
+              message:
+                '相殺できる未消化の休日出勤がありません。代休は休日出勤と1対1で相殺する必要があります（休日出勤は6ヶ月以内社員休暇の埋め合わせにも使われます）。',
+            },
           },
           { status: 400 }
         );

@@ -28,13 +28,14 @@ export async function GET() {
       );
     }
 
-    // 既に代休で消化済みの休日出勤日を取得
-    const { data: compensatoryRecords, error: compError } = await supabase
+    // 既に取得済みの代休の件数を取得。
+    // 代休は必ず休日出勤と相殺されるため、対象日の有無に関わらず件数分だけ休日出勤を消費する。
+    // （過去に対象日を紐づけずに記録された代休も消化済みとして数え、サマリーの残数と一致させる）
+    const { count: compensatoryLeaveCount, error: compError } = await supabase
       .from('attendance_records')
-      .select('compensatory_leave_date')
+      .select('id', { count: 'exact', head: true })
       .eq('staff_id', staff.id)
-      .eq('leave_type', 'compensatory_leave')
-      .not('compensatory_leave_date', 'is', null);
+      .eq('leave_type', 'compensatory_leave');
 
     if (compError) {
       console.error('代休記録取得エラー:', compError);
@@ -44,7 +45,7 @@ export async function GET() {
       );
     }
 
-    // 6ヶ月以内社員休暇の件数を取得。この休暇は休日出勤で埋める必要があるため、
+    // 6ヶ月以内社員休暇の件数を取得。この休暇も休日出勤で埋める必要があるため、
     // その件数分だけ休日出勤が消費される（特定の日には紐づかないので件数として差し引く）。
     const { count: newEmployeeLeaveCount, error: nelError } = await supabase
       .from('attendance_records')
@@ -60,42 +61,20 @@ export async function GET() {
       );
     }
 
-    // 消化済みの日付をカウント（同じ日を複数回相殺できないよう1対1で管理）
-    const usedCount = new Map<string, number>();
-    (compensatoryRecords ?? []).forEach((rec) => {
-      const d = rec.compensatory_leave_date as string | null;
-      if (d) {
-        usedCount.set(d, (usedCount.get(d) ?? 0) + 1);
-      }
-    });
-
-    // 休日出勤日ごとの件数から消化済み分を差し引き、未消化の日だけを残す
-    const holidayWorkCount = new Map<string, number>();
-    (holidayWorkRecords ?? []).forEach((rec) => {
-      const d = rec.date as string;
-      holidayWorkCount.set(d, (holidayWorkCount.get(d) ?? 0) + 1);
-    });
-
+    // 休日出勤日を新しい順に展開（1日複数件も件数分展開）
     let availableDates: string[] = [];
-    // 日付降順（新しい順）を維持するため holidayWorkRecords の順序で走査
-    const seen = new Set<string>();
     (holidayWorkRecords ?? []).forEach((rec) => {
-      const d = rec.date as string;
-      if (seen.has(d)) return;
-      seen.add(d);
-      const total = holidayWorkCount.get(d) ?? 0;
-      const used = usedCount.get(d) ?? 0;
-      const remaining = total - used;
-      for (let i = 0; i < remaining; i++) {
-        availableDates.push(d);
-      }
+      availableDates.push(rec.date as string);
     });
 
-    // 6ヶ月以内社員休暇の件数分は休日出勤で埋め済みとみなし、古い休日出勤から除外する。
-    // availableDates は新しい順なので、末尾（古い方）から件数分を取り除く。
-    const nelCount = newEmployeeLeaveCount ?? 0;
-    if (nelCount > 0) {
-      availableDates = availableDates.slice(0, Math.max(availableDates.length - nelCount, 0));
+    // 代休・6ヶ月以内社員休暇の件数分は休日出勤で消化済みとみなし、古い休日出勤から除外する。
+    // availableDates は新しい順なので、末尾（古い方）から消化件数分を取り除く。
+    const consumedCount = (compensatoryLeaveCount ?? 0) + (newEmployeeLeaveCount ?? 0);
+    if (consumedCount > 0) {
+      availableDates = availableDates.slice(
+        0,
+        Math.max(availableDates.length - consumedCount, 0)
+      );
     }
 
     return NextResponse.json({
