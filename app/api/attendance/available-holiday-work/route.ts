@@ -28,12 +28,13 @@ export async function GET() {
       );
     }
 
-    // 既に取得済みの代休の件数を取得。
-    // 代休は必ず休日出勤と相殺されるため、対象日の有無に関わらず件数分だけ休日出勤を消費する。
-    // （過去に対象日を紐づけずに記録された代休も消化済みとして数え、サマリーの残数と一致させる）
-    const { count: compensatoryLeaveCount, error: compError } = await supabase
+    // 既に取得済みの代休を取得（紐付け先の休日出勤日も含める）。
+    // 代休は必ず休日出勤と相殺されるため件数分だけ休日出勤を消費するが、
+    // 対象日(compensatory_leave_date)が紐付いている代休は、その特定の休日出勤日を直接消化する。
+    // （紐付けのある休日出勤を候補から外すことで、ユーザーが相殺したペアを候補に出さない）
+    const { data: compensatoryRecords, error: compError } = await supabase
       .from('attendance_records')
-      .select('id', { count: 'exact', head: true })
+      .select('compensatory_leave_date')
       .eq('staff_id', staff.id)
       .eq('leave_type', 'compensatory_leave');
 
@@ -44,6 +45,8 @@ export async function GET() {
         { status: 500 }
       );
     }
+
+    const compensatoryLeaveCount = compensatoryRecords?.length ?? 0;
 
     // 6ヶ月以内社員休暇の件数を取得。この休暇も休日出勤で埋める必要があるため、
     // その件数分だけ休日出勤が消費される（特定の日には紐づかないので件数として差し引く）。
@@ -67,9 +70,24 @@ export async function GET() {
       availableDates.push(rec.date as string);
     });
 
-    // 代休・6ヶ月以内社員休暇の件数分は休日出勤で消化済みとみなし、古い休日出勤から除外する。
-    // availableDates は新しい順なので、末尾（古い方）から消化件数分を取り除く。
-    const consumedCount = (compensatoryLeaveCount ?? 0) + (newEmployeeLeaveCount ?? 0);
+    // ① 紐付けのある代休は、その特定の休日出勤日を1件ずつ直接消化する。
+    //    （例: 10/24代休 → 10/22休日出勤 のペアは 10/22 を候補から除外）
+    //    これにより、ユーザーが相殺済みのペアが候補に出なくなる。
+    let linkedCompCount = 0;
+    (compensatoryRecords ?? []).forEach((rec) => {
+      const linkedDate = rec.compensatory_leave_date as string | null;
+      if (!linkedDate) return;
+      const idx = availableDates.indexOf(linkedDate);
+      if (idx !== -1) {
+        availableDates.splice(idx, 1); // 紐付いた休日出勤を1件消化
+        linkedCompCount += 1;
+      }
+    });
+
+    // ② 紐付けのない代休 + 6ヶ月以内社員休暇の件数分は、古い休日出勤から消化する。
+    //    availableDates は新しい順なので、末尾（古い方）から件数分を取り除く。
+    const unlinkedCompCount = Math.max((compensatoryLeaveCount ?? 0) - linkedCompCount, 0);
+    const consumedCount = unlinkedCompCount + (newEmployeeLeaveCount ?? 0);
     if (consumedCount > 0) {
       availableDates = availableDates.slice(
         0,
